@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Trackin.API.Infrastructure.Context;
+using Trackin.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,6 +16,8 @@ builder.Services.AddDbContext<TrackinContext>(options =>
     options.UseOracle(builder.Configuration.GetConnectionString("Oracle"));
 }
             );
+
+builder.Services.AddScoped<MotoService>();
 
 var app = builder.Build();
 
