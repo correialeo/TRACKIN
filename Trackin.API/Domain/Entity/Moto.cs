@@ -4,21 +4,43 @@ namespace Trackin.API.Domain.Entity
 {
     public class Moto
     {
-        public long Id { get; set; } 
-        public string Placa { get; set; } = string.Empty; 
-        public ModeloMoto Modelo { get; set; } 
-        public int Ano { get; set; } 
-        public MotoStatus Status { get; set; } 
-        public string RFIDTag { get; set; } = string.Empty; // Identificador único do dispositivo RFID
-        public DateTime DataAquisicao { get; set; } // Data de aquisição da moto
-        public DateTime? UltimaManutencao { get; set; } // Última manutenção realizada (nullable)
-        public string ImagemReferencia { get; set; } = string.Empty; // URL para imagem de referência
-        public string CaracteristicasVisuais { get; set; } = string.Empty; // JSON com características visuais
+        public long Id { get; private set; } 
+        public string Placa { get; private set; } = string.Empty;
+        public ModeloMoto Modelo { get; private set; }
+        public int Ano { get; private set; }
+        public MotoStatus Status { get; private set; } = MotoStatus.DISPONIVEL;
+        public string RFIDTag { get; private set; } = string.Empty;
+        public DateTime? UltimaManutencao { get; private set; }
+        public string ImagemReferencia { get; private set; } = string.Empty;
+        public string CaracteristicasVisuais { get; private set; } = string.Empty;
 
 
         public ICollection<EventoMoto> Eventos { get; set; } = new List<EventoMoto>(); 
         public ICollection<LocalizacaoMoto> Localizacoes { get; set; } = new List<LocalizacaoMoto>(); 
         public ICollection<DeteccaoVisual> DeteccoesVisuais { get; set; } = new List<DeteccaoVisual>(); // Detecções visuais associadas à moto
 
+
+        public Moto(){}
+
+        public Moto(string placa, ModeloMoto modelo, int ano, string rfidTag)
+        {
+            Placa = placa;
+            Modelo = modelo;
+            Ano = ano;
+            RFIDTag = rfidTag;
+        }
+
+        public void AlterarStatus(MotoStatus novoStatus)
+        {
+            if (novoStatus != Status)
+            {
+                Status = novoStatus;
+            }
+        }
+
+        public void RegistrarManutencao(DateTime data)
+        {
+            UltimaManutencao = data;
+        }
     }
 }

@@ -28,10 +28,9 @@ namespace Trackin.API.Infrastructure.Mappings
             );
 
             builder.Property(m => m.RFIDTag).IsRequired().HasMaxLength(50);
-            builder.Property(m => m.DataAquisicao).IsRequired();
             builder.Property(m => m.UltimaManutencao).IsRequired(false); 
-            builder.Property(m => m.ImagemReferencia).HasMaxLength(255);
-            builder.Property(m => m.CaracteristicasVisuais).HasColumnType("CLOB");
+            builder.Property(m => m.ImagemReferencia).HasMaxLength(255).IsRequired(false);
+            builder.Property(m => m.CaracteristicasVisuais).HasColumnType("CLOB").IsRequired(false);
         }
     }
 }
