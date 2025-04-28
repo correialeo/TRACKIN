@@ -10,5 +10,7 @@ namespace Trackin.API.Domain.Entity
         public string Senha { get; set; } = string.Empty;
         public UsuarioRole Role { get; set; } = UsuarioRole.COMUM; // Admin, Operador, Gerente
         public long FilialId { get; set; } // FK para Filial
+
+        public Filial Filial { get; set; } 
     }
 }

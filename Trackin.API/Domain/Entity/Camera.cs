@@ -13,5 +13,8 @@ namespace Trackin.API.Domain.Entity
         public double AnguloVisao { get; set; } // Ângulo de visão em graus
         public CameraStatus Status { get; set; } = CameraStatus.ATIVA; 
         public string URL { get; set; } = string.Empty; // Endpoint para stream de vídeo/imagem
+
+        public Patio Patio { get; set; }
+        public ICollection<DeteccaoVisual> DeteccoesVisuais { get; set; } = new List<DeteccaoVisual>(); 
     }
 }

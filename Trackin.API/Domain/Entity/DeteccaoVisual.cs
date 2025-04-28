@@ -12,5 +12,10 @@
         public double CoordenadaYPatio { get; set; } // Coordenada Y no pátio
         public double Confianca { get; set; } // Porcentagem de confiança na detecção
         public string ImagemCaptura { get; set; } = string.Empty; // URL para imagem capturada (opcional)
+
+
+        public Moto? Moto { get; set; } 
+        public Camera Camera { get; set; } 
+
     }
 }

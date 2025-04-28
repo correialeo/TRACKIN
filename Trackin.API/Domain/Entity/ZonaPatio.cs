@@ -10,5 +10,8 @@
         public double CoordenadaFinalX { get; set; } 
         public double CoordenadaFinalY { get; set; } 
         public string Cor { get; set; } = string.Empty; // Cor para representação visual
+
+
+        public Patio Patio { get; set; }
     }
 }

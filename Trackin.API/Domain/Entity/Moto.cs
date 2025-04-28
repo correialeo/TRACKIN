@@ -14,5 +14,11 @@ namespace Trackin.API.Domain.Entity
         public DateTime? UltimaManutencao { get; set; } // Última manutenção realizada (nullable)
         public string ImagemReferencia { get; set; } = string.Empty; // URL para imagem de referência
         public string CaracteristicasVisuais { get; set; } = string.Empty; // JSON com características visuais
+
+
+        public ICollection<EventoMoto> Eventos { get; set; } = new List<EventoMoto>(); 
+        public ICollection<LocalizacaoMoto> Localizacoes { get; set; } = new List<LocalizacaoMoto>(); 
+        public ICollection<DeteccaoVisual> DeteccoesVisuais { get; set; } = new List<DeteccaoVisual>(); // Detecções visuais associadas à moto
+
     }
 }

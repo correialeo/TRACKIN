@@ -1,6 +1,6 @@
 ﻿namespace Trackin.API.Domain.Enums
 {
-    public enum EventoMotoFonte
+    public enum FonteDados
     {
         SISTEMA,
         MANUAL,

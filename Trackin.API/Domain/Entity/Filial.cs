@@ -7,6 +7,8 @@
         public long PatioId { get; set; } // FK para Pátio
         public string Telefone { get; set; } = string.Empty; 
         public string Email { get; set; } = string.Empty; 
-        public long ResponsavelId { get; set; } // FK para Usuário responsável
+
+        public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>(); 
+        public Patio Patio { get; set; }
     }
 }

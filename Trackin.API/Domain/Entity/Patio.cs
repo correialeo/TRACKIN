@@ -11,5 +11,11 @@
         public double DimensaoX { get; set; } // Largura em metros
         public double DimensaoY { get; set; } // Comprimento em metros
         public string PlantaBaixa { get; set; } = string.Empty; // URL para imagem da planta baixa
+
+        public ICollection<Camera> Camera { get; set; } = new List<Camera>();
+        public ICollection<LocalizacaoMoto> Localizacoes { get; set; } = new List<LocalizacaoMoto>();
+        public Filial Filial { get; set; } 
+        public ICollection<ZonaPatio> Zonas { get; set; } = new List<ZonaPatio>();
+        public ICollection<Camera> Cameras { get; set; } = new List<Camera>(); 
     }
 }
