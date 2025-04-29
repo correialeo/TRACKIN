@@ -20,10 +20,6 @@ namespace Trackin.API.Infrastructure.Mappings
             builder.Property(p => p.DimensaoY).IsRequired();
             builder.Property(p => p.PlantaBaixa).HasMaxLength(255);
 
-            builder.HasOne(p => p.Filial) 
-                   .WithOne(f => f.Patio)
-                   .HasForeignKey<Filial>(f => f.PatioId);
-
             builder.HasMany(p => p.Zonas) 
                    .WithOne(z => z.Patio)
                    .HasForeignKey(z => z.PatioId);

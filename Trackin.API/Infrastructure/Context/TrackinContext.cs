@@ -9,7 +9,6 @@ namespace Trackin.API.Infrastructure.Context
         public DbSet<Moto> Motos { get; set; }
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Patio> Patios { get; set; }
-        public DbSet<Filial> Filiais { get; set; }
         public DbSet<Camera> Cameras { get; set; }
         public DbSet<SensorRFID> SensoresRFID { get; set; }
         public DbSet<ZonaPatio> ZonasPatio { get; set; }

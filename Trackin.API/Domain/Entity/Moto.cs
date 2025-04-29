@@ -5,6 +5,7 @@ namespace Trackin.API.Domain.Entity
     public class Moto
     {
         public long Id { get; private set; } 
+        public long PatioId { get; private set; }
         public string Placa { get; private set; } = string.Empty;
         public ModeloMoto Modelo { get; private set; }
         public int Ano { get; private set; }
@@ -15,6 +16,7 @@ namespace Trackin.API.Domain.Entity
         public string CaracteristicasVisuais { get; private set; } = string.Empty;
 
 
+        public Patio Patio { get; set; }
         public ICollection<EventoMoto> Eventos { get; set; } = new List<EventoMoto>(); 
         public ICollection<LocalizacaoMoto> Localizacoes { get; set; } = new List<LocalizacaoMoto>(); 
         public ICollection<DeteccaoVisual> DeteccoesVisuais { get; set; } = new List<DeteccaoVisual>(); // Detecções visuais associadas à moto
@@ -22,8 +24,9 @@ namespace Trackin.API.Domain.Entity
 
         public Moto(){}
 
-        public Moto(string placa, ModeloMoto modelo, int ano, string rfidTag)
+        public Moto(long patioId, string placa, ModeloMoto modelo, int ano, string rfidTag)
         {
+            PatioId = patioId;
             Placa = placa;
             Modelo = modelo;
             Ano = ano;
@@ -41,6 +44,11 @@ namespace Trackin.API.Domain.Entity
         public void RegistrarManutencao(DateTime data)
         {
             UltimaManutencao = data;
+        }
+
+        public void AtualizarImagemReferencia(string imagem)
+        {
+            ImagemReferencia = imagem;
         }
     }
 }

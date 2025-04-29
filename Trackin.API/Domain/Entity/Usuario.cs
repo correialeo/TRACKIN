@@ -9,10 +9,10 @@ namespace Trackin.API.Domain.Entity
         public string Email { get; set; } = string.Empty;
         public string Senha { get; set; } = string.Empty;
         public UsuarioRole Role { get; set; } = UsuarioRole.COMUM; // Admin, Operador, Gerente
-        public long FilialId { get; set; } // FK para Filial
+        public long PatioId { get; set; } 
         public EventoMoto[]? Eventos { get; set; } = Array.Empty<EventoMoto>();
 
 
-        public Filial Filial { get; set; } 
+        public Patio Patio { get; set; } 
     }
 }

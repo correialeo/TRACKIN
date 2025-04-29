@@ -14,9 +14,9 @@
 
         public ICollection<Camera> Camera { get; set; } = new List<Camera>();
         public ICollection<LocalizacaoMoto> Localizacoes { get; set; } = new List<LocalizacaoMoto>();
-        public Filial Filial { get; set; } 
         public ICollection<ZonaPatio> Zonas { get; set; } = new List<ZonaPatio>();
         public ICollection<Camera> Cameras { get; set; } = new List<Camera>(); 
         public ICollection<SensorRFID> SensoresRFID { get; set; } = new List<SensorRFID>();
+        public ICollection<Usuario> Usuarios { get; set; } = new List<Usuario>();
     }
 }

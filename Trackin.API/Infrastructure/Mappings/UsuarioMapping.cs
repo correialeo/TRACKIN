@@ -18,9 +18,9 @@ namespace Trackin.API.Infrastructure.Mappings
                    .IsRequired()
                    .HasMaxLength(20);
 
-            builder.HasOne(u => u.Filial) 
-                   .WithMany(f => f.Usuarios)
-                   .HasForeignKey(u => u.FilialId);
+            builder.HasOne(u => u.Patio) 
+                   .WithMany(p => p.Usuarios)
+                   .HasForeignKey(u => u.PatioId);
         }
     }
 }
