@@ -17,5 +17,6 @@
         public Filial Filial { get; set; } 
         public ICollection<ZonaPatio> Zonas { get; set; } = new List<ZonaPatio>();
         public ICollection<Camera> Cameras { get; set; } = new List<Camera>(); 
+        public ICollection<SensorRFID> SensoresRFID { get; set; } = new List<SensorRFID>();
     }
 }
