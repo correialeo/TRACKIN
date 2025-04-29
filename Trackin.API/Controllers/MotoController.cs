@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Trackin.API.Domain.Entity;
+using Trackin.API.Domain.Enums;
 using Trackin.API.DTOs;
 using Trackin.API.Services;
 
@@ -46,6 +47,80 @@ namespace Trackin.API.Controllers
                 return StatusCode(500, response.Message);
             }
             return Ok(response.Data);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosAsync();
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+            return Ok(response.Data);
+        }
+
+        [HttpGet("patio/{patioId}")]
+        public async Task<IActionResult> GetByFilial(long patioId)
+        {
+            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosByPatioAsync(patioId);
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+            return Ok(response.Data);
+        }
+
+        [HttpGet("status/{status}")]
+        public async Task<IActionResult> GetByStatus(MotoStatus status)
+        {
+            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosByStatusAsync(status);
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+            return Ok(response.Data);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Put(long id, [FromBody] MotoDTO motoDto)
+        {
+            if (id != motoDto.Id)
+            {
+                return BadRequest("ID do recurso não corresponde ao ID fornecido.");
+            }
+            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id, motoDto);
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
+            return NoContent();
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(long id)
+        {
+            ServiceResponse<Moto> result = await _motoService.DeleteMotoAsync(id);
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
+            return NoContent();
+        }
+
+        [HttpPost("{id}/imagem")]
+        public async Task<IActionResult> PostImagem(long id, string imageB64)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var result = await _motoService.CadastrarImagemReferenciaAsync(id, imageB64);
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
+            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result.Data);
         }
     }
 }
