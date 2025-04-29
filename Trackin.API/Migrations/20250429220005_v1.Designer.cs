@@ -12,8 +12,8 @@ using Trackin.API.Infrastructure.Context;
 namespace Trackin.API.Migrations
 {
     [DbContext(typeof(TrackinContext))]
-    [Migration("20250429132812_addSensorRFIDModel")]
-    partial class addSensorRFIDModel
+    [Migration("20250429220005_v1")]
+    partial class v1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -129,6 +129,9 @@ namespace Trackin.API.Migrations
 
                     OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<long?>("CameraId")
+                        .HasColumnType("NUMBER(19)");
+
                     b.Property<string>("FonteEvento")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -138,9 +141,11 @@ namespace Trackin.API.Migrations
                         .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("Observacao")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("NVARCHAR2(500)");
+
+                    b.Property<long?>("SensorId")
+                        .HasColumnType("NUMBER(19)");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TIMESTAMP(7)");
@@ -150,48 +155,20 @@ namespace Trackin.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("NVARCHAR2(20)");
 
-                    b.Property<int?>("UsuarioId")
-                        .HasColumnType("NUMBER(10)");
+                    b.Property<long?>("UsuarioId")
+                        .HasColumnType("NUMBER(19)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CameraId");
 
                     b.HasIndex("MotoId");
 
+                    b.HasIndex("SensorId");
+
+                    b.HasIndex("UsuarioId");
+
                     b.ToTable("Eventos");
-                });
-
-            modelBuilder.Entity("Trackin.API.Domain.Entity.Filial", b =>
-                {
-                    b.Property<long>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("NUMBER(19)");
-
-                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("NVARCHAR2(100)");
-
-                    b.Property<string>("Nome")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("NVARCHAR2(100)");
-
-                    b.Property<long>("PatioId")
-                        .HasColumnType("NUMBER(19)");
-
-                    b.Property<string>("Telefone")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("NVARCHAR2(20)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PatioId")
-                        .IsUnique();
-
-                    b.ToTable("Filiais");
                 });
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.LocalizacaoMoto", b =>
@@ -262,6 +239,9 @@ namespace Trackin.API.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("NVARCHAR2(50)");
 
+                    b.Property<long>("PatioId")
+                        .HasColumnType("NUMBER(19)");
+
                     b.Property<string>("Placa")
                         .IsRequired()
                         .HasMaxLength(10)
@@ -281,6 +261,8 @@ namespace Trackin.API.Migrations
                         .HasColumnType("TIMESTAMP(7)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PatioId");
 
                     b.ToTable("Motos");
                 });
@@ -387,13 +369,13 @@ namespace Trackin.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("NVARCHAR2(100)");
 
-                    b.Property<long>("FilialId")
-                        .HasColumnType("NUMBER(19)");
-
                     b.Property<string>("Nome")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("NVARCHAR2(100)");
+
+                    b.Property<long>("PatioId")
+                        .HasColumnType("NUMBER(19)");
 
                     b.Property<string>("Role")
                         .IsRequired()
@@ -407,7 +389,7 @@ namespace Trackin.API.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("FilialId");
+                    b.HasIndex("PatioId");
 
                     b.ToTable("Usuarios");
                 });
@@ -444,6 +426,9 @@ namespace Trackin.API.Migrations
 
                     b.Property<long>("PatioId")
                         .HasColumnType("NUMBER(19)");
+
+                    b.Property<int>("TipoZona")
+                        .HasColumnType("NUMBER(10)");
 
                     b.HasKey("Id");
 
@@ -486,24 +471,34 @@ namespace Trackin.API.Migrations
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.EventoMoto", b =>
                 {
+                    b.HasOne("Trackin.API.Domain.Entity.Camera", "Camera")
+                        .WithMany("Eventos")
+                        .HasForeignKey("CameraId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Trackin.API.Domain.Entity.Moto", "Moto")
                         .WithMany("Eventos")
                         .HasForeignKey("MotoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Trackin.API.Domain.Entity.SensorRFID", "Sensor")
+                        .WithMany("Eventos")
+                        .HasForeignKey("SensorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Trackin.API.Domain.Entity.Usuario", "Usuario")
+                        .WithMany("Eventos")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Camera");
+
                     b.Navigation("Moto");
-                });
 
-            modelBuilder.Entity("Trackin.API.Domain.Entity.Filial", b =>
-                {
-                    b.HasOne("Trackin.API.Domain.Entity.Patio", "Patio")
-                        .WithOne("Filial")
-                        .HasForeignKey("Trackin.API.Domain.Entity.Filial", "PatioId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Sensor");
 
-                    b.Navigation("Patio");
+                    b.Navigation("Usuario");
                 });
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.LocalizacaoMoto", b =>
@@ -521,6 +516,17 @@ namespace Trackin.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Moto");
+
+                    b.Navigation("Patio");
+                });
+
+            modelBuilder.Entity("Trackin.API.Domain.Entity.Moto", b =>
+                {
+                    b.HasOne("Trackin.API.Domain.Entity.Patio", "Patio")
+                        .WithMany()
+                        .HasForeignKey("PatioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Patio");
                 });
@@ -546,13 +552,13 @@ namespace Trackin.API.Migrations
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.Usuario", b =>
                 {
-                    b.HasOne("Trackin.API.Domain.Entity.Filial", "Filial")
+                    b.HasOne("Trackin.API.Domain.Entity.Patio", "Patio")
                         .WithMany("Usuarios")
-                        .HasForeignKey("FilialId")
+                        .HasForeignKey("PatioId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Filial");
+                    b.Navigation("Patio");
                 });
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.ZonaPatio", b =>
@@ -569,11 +575,8 @@ namespace Trackin.API.Migrations
             modelBuilder.Entity("Trackin.API.Domain.Entity.Camera", b =>
                 {
                     b.Navigation("DeteccoesVisuais");
-                });
 
-            modelBuilder.Entity("Trackin.API.Domain.Entity.Filial", b =>
-                {
-                    b.Navigation("Usuarios");
+                    b.Navigation("Eventos");
                 });
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.Moto", b =>
@@ -591,14 +594,23 @@ namespace Trackin.API.Migrations
 
                     b.Navigation("Cameras");
 
-                    b.Navigation("Filial")
-                        .IsRequired();
-
                     b.Navigation("Localizacoes");
 
                     b.Navigation("SensoresRFID");
 
+                    b.Navigation("Usuarios");
+
                     b.Navigation("Zonas");
+                });
+
+            modelBuilder.Entity("Trackin.API.Domain.Entity.SensorRFID", b =>
+                {
+                    b.Navigation("Eventos");
+                });
+
+            modelBuilder.Entity("Trackin.API.Domain.Entity.Usuario", b =>
+                {
+                    b.Navigation("Eventos");
                 });
 
             modelBuilder.Entity("Trackin.API.Domain.Entity.ZonaPatio", b =>
