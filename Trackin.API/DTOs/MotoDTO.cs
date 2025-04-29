@@ -5,7 +5,8 @@ namespace Trackin.API.DTOs
 {
     public class MotoDTO
     {
-        public long Id { get; set; } 
+        public long Id { get; set; }
+        public long PatioId { get; set; } 
 
         [Required(ErrorMessage = "A placa é obrigatória.")]
         [StringLength(7, MinimumLength = 7, ErrorMessage = "A placa deve ter 7 caracteres.")]
