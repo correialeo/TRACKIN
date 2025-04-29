@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Trackin.API.Infrastructure.Context;
 using Trackin.API.Services;
@@ -18,6 +19,7 @@ builder.Services.AddDbContext<TrackinContext>(options =>
             );
 
 builder.Services.AddScoped<MotoService>();
+builder.Services.AddScoped<RFIDService>();
 
 var app = builder.Build();
 
