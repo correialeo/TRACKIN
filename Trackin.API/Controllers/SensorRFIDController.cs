@@ -43,14 +43,22 @@ namespace Trackin.API.Controllers
         // PUT: api/SensorRFID/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutSensorRFID(long id, SensorRFID sensorRFID)
+        public async Task<IActionResult> PutSensorRFID(long id, CriarSensorRFIdDTO sensorRFIDDTO)
         {
-            if (id != sensorRFID.Id)
+            var sensorRFID = await _context.SensoresRFID.FindAsync(id);
+            if (sensorRFID == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(sensorRFID).State = EntityState.Modified;
+            sensorRFID.ZonaPatioId = sensorRFIDDTO.ZonaPatioId;
+            sensorRFID.PatioId = sensorRFIDDTO.PatioId;
+            sensorRFID.Posicao = sensorRFIDDTO.Posicao;
+            sensorRFID.PosicaoX = sensorRFIDDTO.PosicaoX;
+            sensorRFID.PosicaoY = sensorRFIDDTO.PosicaoY;
+            sensorRFID.Altura = sensorRFIDDTO.Altura;
+            sensorRFID.AnguloVisao = sensorRFIDDTO.AnguloVisao;
+
 
             try
             {

@@ -42,14 +42,22 @@ namespace Trackin.API.Controllers
         // PUT: api/ZonaPatio/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutZonaPatio(long id, ZonaPatio zonaPatio)
+        public async Task<IActionResult> PutZonaPatio(long id, CriarZonaPatioDTO zonaPatioDto)
         {
-            if (id != zonaPatio.Id)
+            var zonaPatio = await _context.ZonasPatio.FindAsync(id);
+            if (zonaPatio == null)
             {
-                return BadRequest();
+                return NotFound();
             }
 
-            _context.Entry(zonaPatio).State = EntityState.Modified;
+            zonaPatio.PatioId = zonaPatioDto.PatioId;
+            zonaPatio.Nome = zonaPatioDto.Nome;
+            zonaPatio.TipoZona = zonaPatioDto.TipoZona;
+            zonaPatio.CoordenadaInicialX = zonaPatioDto.CoordenadaInicialX;
+            zonaPatio.CoordenadaInicialY = zonaPatioDto.CoordenadaInicialY;
+            zonaPatio.CoordenadaFinalX = zonaPatioDto.CoordenadaFinalX;
+            zonaPatio.CoordenadaFinalY = zonaPatioDto.CoordenadaFinalY;
+            zonaPatio.Cor = zonaPatioDto.Cor;
 
             try
             {
