@@ -1,41 +1,48 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Trackin.API.Domain.Entity;
+﻿using Trackin.API.Domain.Entity;
 using Trackin.API.Domain.Enums;
 using Trackin.API.DTOs;
-using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 
 namespace Trackin.API.Services
 {
     public class RFIDService
     {
-        private readonly TrackinContext _context;
+        private readonly IMotoRepository _motoRepository;
+        private readonly ISensorRFIDRepository _sensorRepository;
+        private readonly IEventoMotoRepository _eventoRepository;
+        private readonly ILocalizacaoMotoRepository _localizacaoRepository;
         private readonly ILogger<RFIDService> _logger;
-        public RFIDService(TrackinContext context, ILogger<RFIDService> logger)
+
+        public RFIDService(
+            IMotoRepository motoRepository,
+            ISensorRFIDRepository sensorRepository,
+            IEventoMotoRepository eventoRepository,
+            ILocalizacaoMotoRepository localizacaoRepository,
+            ILogger<RFIDService> logger)
         {
-            _context = context;
-            _logger = logger;   
+            _motoRepository = motoRepository;
+            _sensorRepository = sensorRepository;
+            _eventoRepository = eventoRepository;
+            _localizacaoRepository = localizacaoRepository;
+            _logger = logger;
         }
 
         public async Task<ServiceResponse<LocalizacaoMotoDTO>> ProcessarLeituraRFID(RFIDLeituraDTO leitura)
         {
             try
             {
-                Moto? moto = await _context.Motos.FirstOrDefaultAsync(m => m.RFIDTag == leitura.RFID);
+                Moto? moto = await _motoRepository.GetByRFIDTagAsync(leitura.RFID);
                 if (moto == null)
                 {
                     _logger.LogWarning($"RFID não encontrado: {leitura.RFID}");
                     return new ServiceResponse<LocalizacaoMotoDTO>
                     {
                         Success = false,
-                        Message = $"Moto com RFID {leitura.RFID} não encontrada",
-                        Data = null
+                        Message = $"Moto com RFID {leitura.RFID} não encontrada"
                     };
                 }
 
-                SensorRFID? sensor = await _context.SensoresRFID
-                    .Include(s => s.ZonaPatio)
-                    .ThenInclude(z => z.Patio)
-                    .FirstOrDefaultAsync(s => s.Id == leitura.SensorId);
+                SensorRFID? sensor = await _sensorRepository.GetSensorWithZonaAndPatioAsync(leitura.SensorId);
 
                 if (sensor == null)
                 {
@@ -43,8 +50,7 @@ namespace Trackin.API.Services
                     return new ServiceResponse<LocalizacaoMotoDTO>
                     {
                         Success = false,
-                        Message = $"Sensor RFID {leitura.SensorId} não encontrado",
-                        Data = null
+                        Message = $"Sensor RFID {leitura.SensorId} não encontrado"
                     };
                 }
 
@@ -54,8 +60,7 @@ namespace Trackin.API.Services
                     return new ServiceResponse<LocalizacaoMotoDTO>
                     {
                         Success = false,
-                        Message = $"Sensor {leitura.SensorId} não está associado a nenhuma zona",
-                        Data = null
+                        Message = $"Sensor {leitura.SensorId} não está associado a nenhuma zona"
                     };
                 }
 
@@ -66,10 +71,10 @@ namespace Trackin.API.Services
                 EventoMoto? evento = new EventoMoto(
                     moto.Id,
                     tipoEvento,
-                    null, 
+                    null,
                     leitura.SensorId,
-                    null, 
-                    null, 
+                    null,
+                    null,
                     FonteDados.RFID
                 );
 
@@ -87,17 +92,18 @@ namespace Trackin.API.Services
 
                 try
                 {
-                    moto.AlterarStatus(status); 
-                    _context.Motos.Update(moto);
+                    moto.AlterarStatus(status);
+                    await _motoRepository.UpdateAsync(moto);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning($"Não foi possível atualizar o status da moto: {ex.Message}");
                 }
 
-                await _context.Eventos.AddAsync(evento);
-                await _context.Localizacoes.AddAsync(localizacao);
-                await _context.SaveChangesAsync();
+                await _eventoRepository.AddAsync(evento);
+                await _localizacaoRepository.AddAsync(localizacao);
+
+                await _eventoRepository.SaveChangesAsync();
 
                 //await NotificarAtualizacaoLocalizacao(localizacao);
 

@@ -24,6 +24,9 @@ builder.Services.AddScoped<RFIDService>();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
+builder.Services.AddScoped<ISensorRFIDRepository, SensorRFIDRepository>();
+builder.Services.AddScoped<IEventoMotoRepository, EventoMotoRepository>();
+builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository>();
 
 var app = builder.Build();
 
