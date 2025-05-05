@@ -4,15 +4,16 @@ using Trackin.API.Domain.Entity;
 using Trackin.API.Domain.Enums;
 using Trackin.API.DTOs;
 using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 
 namespace Trackin.API.Services
 {
     public class MotoService
     {
-        private readonly TrackinContext _db;
-        public MotoService(TrackinContext db)
+        private readonly IMotoRepository _motoRepository;
+        public MotoService(IMotoRepository motoRepository)
         {
-            _db = db;
+            _motoRepository = motoRepository;
         }
 
         public async Task<ServiceResponse<MotoDTO>> CreateMotoAsync(MotoDTO motoDTO)
@@ -21,8 +22,8 @@ namespace Trackin.API.Services
             {
                 Moto moto = new(motoDTO.PatioId, motoDTO.Placa, motoDTO.Modelo, motoDTO.Ano, motoDTO.RFIDTag);
 
-                await _db.Motos.AddAsync(moto);
-                await _db.SaveChangesAsync();
+                await _motoRepository.AddAsync(moto);
+                await _motoRepository.SaveChangesAsync();
 
                 motoDTO.Id = moto.Id;
                 return new ServiceResponse<MotoDTO>
@@ -46,7 +47,7 @@ namespace Trackin.API.Services
         {
             try
             {
-                Moto? moto = await _db.Motos.FindAsync(id);
+                Moto? moto = await _motoRepository.GetByIdAsync(id);
                 if (moto == null)
                 {
                     return new ServiceResponse<Moto>
@@ -71,12 +72,12 @@ namespace Trackin.API.Services
             }
         }
 
-        public async Task<ServiceResponse<List<Moto>>> GetAllMotosAsync()
+        public async Task<ServiceResponse<IEnumerable<Moto>>> GetAllMotosAsync()
         {
             try
             {
-                List<Moto> motos = await _db.Motos.ToListAsync();
-                return new ServiceResponse<List<Moto>>
+                IEnumerable<Moto> motos = await _motoRepository.GetAllAsync();
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = true,
                     Data = motos
@@ -84,7 +85,7 @@ namespace Trackin.API.Services
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<List<Moto>>
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = false,
                     Message = $"Erro ao obter motos: {ex.Message}"
@@ -92,14 +93,12 @@ namespace Trackin.API.Services
             }
         }
 
-        public async Task<ServiceResponse<List<Moto>>> GetAllMotosByPatioAsync(long patioId)
+        public async Task<ServiceResponse<IEnumerable<Moto>>> GetAllMotosByPatioAsync(long patioId)
         {
             try
             {
-                List<Moto> motos = await _db.Motos
-                    .Where(m => m.PatioId == patioId)
-                    .ToListAsync();
-                return new ServiceResponse<List<Moto>>
+                IEnumerable<Moto> motos = await _motoRepository.GetAllByPatioAsync(patioId);
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = true,
                     Data = motos
@@ -107,7 +106,7 @@ namespace Trackin.API.Services
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<List<Moto>>
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = false,
                     Message = $"Erro ao obter motos por filial: {ex.Message}"
@@ -115,14 +114,12 @@ namespace Trackin.API.Services
             }
         }
 
-        public async Task<ServiceResponse<List<Moto>>> GetAllMotosByStatusAsync(MotoStatus status)
+        public async Task<ServiceResponse<IEnumerable<Moto>>> GetAllMotosByStatusAsync(MotoStatus status)
         {
             try
             {
-                List<Moto> motos = await _db.Motos
-                    .Where(m => m.Status == status)
-                    .ToListAsync();
-                return new ServiceResponse<List<Moto>>
+                IEnumerable<Moto> motos = await _motoRepository.GetAllByStatusAsync(status);
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = true,
                     Data = motos
@@ -130,7 +127,7 @@ namespace Trackin.API.Services
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<List<Moto>>
+                return new ServiceResponse<IEnumerable<Moto>>
                 {
                     Success = false,
                     Message = $"Erro ao obter motos por status: {ex.Message}"
@@ -142,7 +139,7 @@ namespace Trackin.API.Services
         {
             try
             {
-                Moto? moto = await _db.Motos.FindAsync(id);
+                Moto? moto = await _motoRepository.GetByIdAsync(id);
                 if (moto == null)
                 {
                     return new ServiceResponse<Moto>
@@ -152,9 +149,9 @@ namespace Trackin.API.Services
                     };
                 }
 
-                _db.Entry(moto).CurrentValues.SetValues(motoDTO);
+                await _motoRepository.UpdateMotoAsync(moto, motoDTO);
 
-                await _db.SaveChangesAsync();
+                await _motoRepository.SaveChangesAsync();
                 return new ServiceResponse<Moto>
                 {
                     Success = true,
@@ -175,7 +172,7 @@ namespace Trackin.API.Services
         {
             try
             {
-                Moto? moto = await _db.Motos.FindAsync(id);
+                Moto? moto = await _motoRepository.GetByIdAsync(id);
                 if (moto == null)
                 {
                     return new ServiceResponse<Moto>
@@ -184,8 +181,8 @@ namespace Trackin.API.Services
                         Message = "Moto não encontrada."
                     };
                 }
-                _db.Motos.Remove(moto);
-                await _db.SaveChangesAsync();
+                await _motoRepository.RemoveAsync(moto);
+                await _motoRepository.SaveChangesAsync();
                 return new ServiceResponse<Moto>
                 {
                     Success = true,
@@ -206,7 +203,7 @@ namespace Trackin.API.Services
         {
             try
             {
-                Moto? moto = await _db.Motos.FindAsync(id);
+                Moto? moto = await _motoRepository.GetByIdAsync(id);
                 if (moto == null)
                 {
                     return new ServiceResponse<Moto>
@@ -215,9 +212,12 @@ namespace Trackin.API.Services
                         Message = "Moto não encontrada."
                     };
                 }
+
                 moto.AtualizarImagemReferencia(imagemReferencia);
-                _db.Motos.Update(moto);
-                await _db.SaveChangesAsync();
+
+                await _motoRepository.UpdateAsync(moto);
+                await _motoRepository.SaveChangesAsync();
+
                 return new ServiceResponse<Moto>
                 {
                     Success = true,

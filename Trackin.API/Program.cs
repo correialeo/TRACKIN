@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 using Trackin.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,9 @@ builder.Services.AddDbContext<TrackinContext>(options =>
 
 builder.Services.AddScoped<MotoService>();
 builder.Services.AddScoped<RFIDService>();
+
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IMotoRepository, MotoRepository>();
 
 var app = builder.Build();
 

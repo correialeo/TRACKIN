@@ -52,7 +52,7 @@ namespace Trackin.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosAsync();
+            ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosAsync();
             if (!response.Success)
             {
                 return StatusCode(500, response.Message);
@@ -63,7 +63,7 @@ namespace Trackin.API.Controllers
         [HttpGet("patio/{patioId}")]
         public async Task<IActionResult> GetByFilial(long patioId)
         {
-            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosByPatioAsync(patioId);
+            ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosByPatioAsync(patioId);
             if (!response.Success)
             {
                 return StatusCode(500, response.Message);
@@ -74,7 +74,7 @@ namespace Trackin.API.Controllers
         [HttpGet("status/{status}")]
         public async Task<IActionResult> GetByStatus(MotoStatus status)
         {
-            ServiceResponse<List<Moto>> response = await _motoService.GetAllMotosByStatusAsync(status);
+            ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosByStatusAsync(status);
             if (!response.Success)
             {
                 return StatusCode(500, response.Message);
