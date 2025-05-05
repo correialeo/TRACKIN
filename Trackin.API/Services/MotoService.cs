@@ -138,7 +138,7 @@ namespace Trackin.API.Services
             }
         }
 
-        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id, MotoDTO motoDTO)
+        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id, EditarMotoDTO motoDTO)
         {
             try
             {
@@ -152,8 +152,6 @@ namespace Trackin.API.Services
                     };
                 }
 
-
-                motoDTO.Id = id;
                 _db.Entry(moto).CurrentValues.SetValues(motoDTO);
 
                 await _db.SaveChangesAsync();

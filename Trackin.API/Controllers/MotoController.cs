@@ -83,12 +83,8 @@ namespace Trackin.API.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(long id, [FromBody] MotoDTO motoDto)
+        public async Task<IActionResult> Put(long id, [FromBody] EditarMotoDTO motoDto)
         {
-            if (id != motoDto.Id)
-            {
-                return BadRequest("ID do recurso não corresponde ao ID fornecido.");
-            }
             ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id, motoDto);
             if (!result.Success)
             {
