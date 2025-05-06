@@ -31,6 +31,16 @@ namespace Trackin.API.Services
         {
             try
             {
+                if (Math.Abs(leitura.CoordenadaX) > 10 || Math.Abs(leitura.CoordenadaY) > 10)
+                {
+                    _logger.LogWarning($"Offset inválido: X={leitura.CoordenadaX}, Y={leitura.CoordenadaY}");
+                    return new ServiceResponse<LocalizacaoMotoDTO>
+                    {
+                        Success = false,
+                        Message = "Offset de coordenadas excede o limite permitido (±10)"
+                    };
+                }
+
                 Moto? moto = await _motoRepository.GetByRFIDTagAsync(leitura.RFID);
                 if (moto == null)
                 {
@@ -100,8 +110,10 @@ namespace Trackin.API.Services
                     _logger.LogWarning($"Não foi possível atualizar o status da moto: {ex.Message}");
                 }
 
-                await _eventoRepository.AddAsync(evento);
-                await _localizacaoRepository.AddAsync(localizacao);
+                await Task.WhenAll(
+                    _eventoRepository.AddAsync(evento),
+                    _localizacaoRepository.AddAsync(localizacao)
+                );
 
                 await _eventoRepository.SaveChangesAsync();
 
