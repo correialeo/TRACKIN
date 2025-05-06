@@ -27,6 +27,8 @@ builder.Services.AddScoped<IMotoRepository, MotoRepository>();
 builder.Services.AddScoped<ISensorRFIDRepository, SensorRFIDRepository>();
 builder.Services.AddScoped<IEventoMotoRepository, EventoMotoRepository>();
 builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository>();
+builder.Services.AddScoped<IPatioRepository, PatioRepository>();
+builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
 
 var app = builder.Build();
 

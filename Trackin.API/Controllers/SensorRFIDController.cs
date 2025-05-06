@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Trackin.API.Domain.Entity;
 using Trackin.API.DTOs;
 using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 
 namespace Trackin.API.Controllers
 {
@@ -12,25 +13,26 @@ namespace Trackin.API.Controllers
     [ApiController]
     public class SensorRFIDController : ControllerBase
     {
-        private readonly TrackinContext _context;
+        private readonly ISensorRFIDRepository _sensorRFIDRepository;
 
-        public SensorRFIDController(TrackinContext context)
+        public SensorRFIDController(ISensorRFIDRepository sensorRFIDRepository)
         {
-            _context = context;
+            _sensorRFIDRepository = sensorRFIDRepository;
         }
 
-        // GET: api/SensorRFID
+        // Updated method to fix CS0029 error
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SensorRFID>>> GetSensoresRFID()
         {
-            return await _context.SensoresRFID.ToListAsync();
+            IEnumerable<SensorRFID> sensores = await _sensorRFIDRepository.GetAllAsync();
+            return Ok(sensores); 
         }
 
         // GET: api/SensorRFID/5
         [HttpGet("{id}")]
         public async Task<ActionResult<SensorRFID>> GetSensorRFID(long id)
         {
-            var sensorRFID = await _context.SensoresRFID.FindAsync(id);
+            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
 
             if (sensorRFID == null)
             {
@@ -45,7 +47,7 @@ namespace Trackin.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutSensorRFID(long id, CriarSensorRFIdDTO sensorRFIDDTO)
         {
-            var sensorRFID = await _context.SensoresRFID.FindAsync(id);
+            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
             if (sensorRFID == null)
             {
                 return NotFound();
@@ -62,7 +64,7 @@ namespace Trackin.API.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _sensorRFIDRepository.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -95,8 +97,8 @@ namespace Trackin.API.Controllers
                 AnguloVisao = sensorRFID.AnguloVisao
             };
             
-            _context.SensoresRFID.Add(sensor);
-            await _context.SaveChangesAsync();
+            await _sensorRFIDRepository.AddAsync(sensor);
+            await _sensorRFIDRepository.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetSensorRFID), new { id = sensor.Id }, sensor);
         }
@@ -105,21 +107,21 @@ namespace Trackin.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSensorRFID(long id)
         {
-            var sensorRFID = await _context.SensoresRFID.FindAsync(id);
+            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
             if (sensorRFID == null)
             {
                 return NotFound();
             }
 
-            _context.SensoresRFID.Remove(sensorRFID);
-            await _context.SaveChangesAsync();
+            await _sensorRFIDRepository.RemoveAsync(sensorRFID);
+            await _sensorRFIDRepository.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool SensorRFIDExists(long id)
         {
-            return _context.SensoresRFID.Any(e => e.Id == id);
+            return _sensorRFIDRepository.GetAllAsync().Result.Any(e => e.Id == id);
         }
     }
 }

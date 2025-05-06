@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Trackin.API.Domain.Entity;
 using Trackin.API.DTOs;
-using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 
 namespace Trackin.API.Controllers
 {
@@ -15,25 +10,30 @@ namespace Trackin.API.Controllers
     [ApiController]
     public class PatioController : ControllerBase
     {
-        private readonly TrackinContext _context;
+        private readonly IPatioRepository _patioRepository;
 
-        public PatioController(TrackinContext context)
+        public PatioController(IPatioRepository patioRepository)
         {
-            _context = context;
+            _patioRepository = patioRepository;
         }
 
         // GET: api/Patio
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Patio>>> GetPatios()
         {
-            return await _context.Patios.ToListAsync();
+            IEnumerable<Patio> patios = await _patioRepository.GetAllAsync();
+            if (patios == null || !patios.Any())
+            {
+                return NotFound("Nenhum pátio encontrado.");
+            }
+            return Ok(patios);
         }
 
         // GET: api/Patio/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Patio>> GetPatio(long id)
         {
-            var patio = await _context.Patios.FindAsync(id);
+            var patio = await _patioRepository.GetByIdAsync(id);
 
             if (patio == null)
             {
@@ -61,8 +61,8 @@ namespace Trackin.API.Controllers
                 PlantaBaixa = dto.PlantaBaixa,
             };
 
-            _context.Patios.Add(patio);
-            await _context.SaveChangesAsync();
+            await _patioRepository.AddAsync(patio);
+            await _patioRepository.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetPatio), new { id = patio.Id }, patio);
         }
@@ -71,21 +71,21 @@ namespace Trackin.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePatio(long id)
         {
-            var patio = await _context.Patios.FindAsync(id);
+            var patio = await _patioRepository.GetByIdAsync(id);
             if (patio == null)
             {
                 return NotFound();
             }
 
-            _context.Patios.Remove(patio);
-            await _context.SaveChangesAsync();
+            await _patioRepository.RemoveAsync(patio);
+            await _patioRepository.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool PatioExists(long id)
         {
-            return _context.Patios.Any(e => e.Id == id);
+            return (_patioRepository.GetAllAsync().Result.Any(e => e.Id == id));
         }
     }
 }

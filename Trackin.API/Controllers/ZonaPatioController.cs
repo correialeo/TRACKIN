@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Trackin.API.Domain.Entity;
 using Trackin.API.DTOs;
 using Trackin.API.Infrastructure.Context;
+using Trackin.API.Infrastructure.Persistence.Repositories;
 
 namespace Trackin.API.Controllers
 {
@@ -11,25 +12,30 @@ namespace Trackin.API.Controllers
     [ApiController]
     public class ZonaPatioController : ControllerBase
     {
-        private readonly TrackinContext _context;
+        private readonly IZonaPatioRepository _zonaPatioRepository;
 
-        public ZonaPatioController(TrackinContext context)
+        public ZonaPatioController(IZonaPatioRepository zonaPatioRepository)
         {
-            _context = context;
+            _zonaPatioRepository = zonaPatioRepository;
         }
 
         // GET: api/ZonaPatio
         [HttpGet]
         public async Task<ActionResult<IEnumerable<ZonaPatio>>> GetZonasPatio()
         {
-            return await _context.ZonasPatio.ToListAsync();
+            IEnumerable<ZonaPatio> zonasPatio = await _zonaPatioRepository.GetAllAsync();
+            if (zonasPatio == null || !zonasPatio.Any())
+            {
+                return NotFound("Nenhuma zona de pátio encontrada.");
+            }
+            return Ok(zonasPatio);
         }
 
         // GET: api/ZonaPatio/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ZonaPatio>> GetZonaPatio(long id)
         {
-            var zonaPatio = await _context.ZonasPatio.FindAsync(id);
+            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
 
             if (zonaPatio == null)
             {
@@ -44,7 +50,7 @@ namespace Trackin.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutZonaPatio(long id, CriarZonaPatioDTO zonaPatioDto)
         {
-            var zonaPatio = await _context.ZonasPatio.FindAsync(id);
+            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
             if (zonaPatio == null)
             {
                 return NotFound();
@@ -61,7 +67,7 @@ namespace Trackin.API.Controllers
 
             try
             {
-                await _context.SaveChangesAsync();
+                await _zonaPatioRepository.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -95,8 +101,8 @@ namespace Trackin.API.Controllers
                 PatioId = dto.PatioId
             };
 
-            _context.ZonasPatio.Add(zonaPatio);
-            await _context.SaveChangesAsync();
+            await _zonaPatioRepository.AddAsync(zonaPatio);
+            await _zonaPatioRepository.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetZonaPatio), new { id = zonaPatio.Id }, zonaPatio);
         }
@@ -106,21 +112,21 @@ namespace Trackin.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteZonaPatio(long id)
         {
-            var zonaPatio = await _context.ZonasPatio.FindAsync(id);
+            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
             if (zonaPatio == null)
             {
                 return NotFound();
             }
 
-            _context.ZonasPatio.Remove(zonaPatio);
-            await _context.SaveChangesAsync();
+            await _zonaPatioRepository.RemoveAsync(zonaPatio);
+            await _zonaPatioRepository.SaveChangesAsync();
 
             return NoContent();
         }
 
         private bool ZonaPatioExists(long id)
         {
-            return _context.ZonasPatio.Any(e => e.Id == id);
+            return (_zonaPatioRepository.GetAllAsync().Result.Any(e => e.Id == id));
         }
     }
 }
