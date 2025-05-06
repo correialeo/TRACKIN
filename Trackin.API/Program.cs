@@ -1,5 +1,7 @@
+using System.Reflection;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Trackin.API.Infrastructure.Context;
 using Trackin.API.Infrastructure.Persistence.Repositories;
 using Trackin.API.Services;
@@ -11,7 +13,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(x =>
+{
+    x.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "API TRACKIN - MOTTU",
+        Description = "O Swagger documenta os endpoints da API TRACKIN - MOTTU.",
+        Contact = new OpenApiContact() { Name = "Leandro Correia", Email = "rm556203@fiap.com.br" }
+    });
+
+
+    //var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";  
+    //var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile); 
+
+    //x.IncludeXmlComments(xmlPath);
+
+});
 
 builder.Services.AddDbContext<TrackinContext>(options =>
 {
