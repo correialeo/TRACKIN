@@ -1,10 +1,13 @@
 using System.Reflection;
-using System.Text.Json.Serialization;
+using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Trackin.API;
 using Trackin.API.Infrastructure.Context;
 using Trackin.API.Infrastructure.Persistence.Repositories;
 using Trackin.API.Services;
+
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,11 +32,14 @@ builder.Services.AddSwaggerGen(x =>
     x.IncludeXmlComments(xmlPath);
 });
 
+Settings.Initialize(builder.Configuration);
+string connectionString = Settings.GetConnectionString();
+
 builder.Services.AddDbContext<TrackinContext>(options =>
-{
-    options.UseOracle(builder.Configuration.GetConnectionString("Oracle"));
-}
-            );
+    {
+        options.UseOracle(connectionString);
+    }
+ );
 
 builder.Services.AddScoped<MotoService>();
 builder.Services.AddScoped<RFIDService>();
