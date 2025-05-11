@@ -1,4 +1,4 @@
-﻿namespace Trackin.API.Services
+﻿namespace Trackin.API.Common
 {
     public class ServiceResponse<T> where T : class
     {

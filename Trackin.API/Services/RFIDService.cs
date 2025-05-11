@@ -1,4 +1,5 @@
-﻿using Trackin.API.Domain.Entity;
+﻿using Trackin.API.Common;
+using Trackin.API.Domain.Entity;
 using Trackin.API.Domain.Enums;
 using Trackin.API.DTOs;
 using Trackin.API.Infrastructure.Persistence.Repositories;
