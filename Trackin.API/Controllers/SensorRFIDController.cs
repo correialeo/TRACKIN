@@ -49,7 +49,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<SensorRFID>> GetSensorRFID(long id)
         {
-            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
 
             if (sensorRFID == null)
             {
@@ -79,7 +79,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
             if (sensorRFID == null)
             {
                 return NotFound($"Sensor RFID com ID {id} não encontrado.");
@@ -129,7 +129,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var sensor = new SensorRFID
+            SensorRFID sensor = new SensorRFID
             {
                 ZonaPatioId = sensorRFID.ZonaPatioId,
                 PatioId = sensorRFID.PatioId,
@@ -158,7 +158,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteSensorRFID(long id)
         {
-            var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
             if (sensorRFID == null)
             {
                 return NotFound($"Sensor RFID com ID {id} não encontrado.");

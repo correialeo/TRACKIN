@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Trackin.API.Common;
 using Trackin.API.DTOs;
 using Trackin.API.Services;
 
@@ -34,7 +35,7 @@ namespace Trackin.API.Controllers
                 return ValidationProblem(ModelState); 
             }
 
-            var response = await _service.ProcessarLeituraRFID(leitura);
+            ServiceResponse<LocalizacaoMotoDTO> response = await _service.ProcessarLeituraRFID(leitura);
 
             if (response.Message.Contains("não encontrada") || response.Message.Contains("não encontrado"))
             {

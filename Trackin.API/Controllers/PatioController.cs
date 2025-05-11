@@ -48,7 +48,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<Patio>> GetPatio(long id)
         {
-            var patio = await _patioRepository.GetByIdAsync(id);
+            Patio? patio = await _patioRepository.GetByIdAsync(id);
 
             if (patio == null)
             {
@@ -75,7 +75,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var patio = new Patio
+            Patio? patio = new Patio
             {
                 Nome = dto.Nome,
                 Endereco = dto.Endereco,
@@ -105,7 +105,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeletePatio(long id)
         {
-            var patio = await _patioRepository.GetByIdAsync(id);
+            Patio? patio = await _patioRepository.GetByIdAsync(id);
             if (patio == null)
             {
                 return NotFound($"Pátio com ID {id} não encontrado.");

@@ -49,7 +49,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ZonaPatio>> GetZonaPatio(long id)
         {
-            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
+            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
 
             if (zonaPatio == null)
             {
@@ -79,7 +79,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
+            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
             if (zonaPatio == null)
             {
                 return NotFound($"Zona de pátio com ID {id} não encontrada.");
@@ -130,7 +130,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var zonaPatio = new ZonaPatio
+            ZonaPatio? zonaPatio = new ZonaPatio
             {
                 Nome = dto.Nome,
                 TipoZona = dto.TipoZona,
@@ -160,7 +160,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeleteZonaPatio(long id)
         {
-            var zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
+            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
             if (zonaPatio == null)
             {
                 return NotFound($"Zona de pátio com ID {id} não encontrada.");

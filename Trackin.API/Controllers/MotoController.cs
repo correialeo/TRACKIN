@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Trackin.API.Common;
 using Trackin.API.Domain.Entity;
 using Trackin.API.Domain.Enums;
 using Trackin.API.DTOs;
@@ -191,7 +192,7 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _motoService.CadastrarImagemReferenciaAsync(id, imageB64);
+            ServiceResponse<Moto> result = await _motoService.CadastrarImagemReferenciaAsync(id, imageB64);
             if (result.Message == "Moto não encontrada.")
             {
                 return NotFound(result.Message);
