@@ -92,11 +92,19 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 ### Passos de Instalação
 
 1.  **Clone o Repositório**
+    -   Github:
 
-    ```
-    git clone https://github.com/correialeo/TRACKIN.git
+        ```
+        git clone https://github.com/correialeo/TRACKIN.git
 
-    ```
+        ```
+    -   Azure Devops:
+    
+        ```
+        git clone https://Challenge2025-Mottu@dev.azure.com/Challenge2025-Mottu/Mottu/_git/trackin.dotnet.api (HTTPS)
+        git clone git@ssh.dev.azure.com:v3/Challenge2025-Mottu/Mottu/trackin.dotnet.api (SSH)
+
+        ```
 
 2.  **Configure as Variáveis de Ambiente**
 
