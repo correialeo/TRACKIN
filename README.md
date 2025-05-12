@@ -94,8 +94,7 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 1.  **Clone o Repositório**
 
     ```
-    git clone https://github.com/seu-usuario/trackin-api.git
-    cd trackin-api
+    git clone https://github.com/correialeo/TRACKIN.git
 
     ```
 
