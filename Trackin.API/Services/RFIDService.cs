@@ -32,16 +32,6 @@ namespace Trackin.API.Services
         {
             try
             {
-                if (Math.Abs(leitura.CoordenadaX) > 10 || Math.Abs(leitura.CoordenadaY) > 10)
-                {
-                    _logger.LogWarning($"Offset inválido: X={leitura.CoordenadaX}, Y={leitura.CoordenadaY}");
-                    return new ServiceResponse<LocalizacaoMotoDTO>
-                    {
-                        Success = false,
-                        Message = "Offset de coordenadas excede o limite permitido (±10)"
-                    };
-                }
-
                 Moto? moto = await _motoRepository.GetByRFIDTagAsync(leitura.RFID);
                 if (moto == null)
                 {
@@ -75,7 +65,17 @@ namespace Trackin.API.Services
                     };
                 }
 
-                var (coordenadaFinalX, coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.CoordenadaX, leitura.CoordenadaY);
+                if (leitura.PotenciaSinal > -30 || leitura.PotenciaSinal < -120)
+                {
+                    _logger.LogWarning($"Potência inválida: {leitura.PotenciaSinal} dBm");
+                    return new ServiceResponse<LocalizacaoMotoDTO>
+                    {
+                        Success = false,
+                        Message = "Potência do sinal fora da faixa válida (-30 a -120 dBm)"
+                    };
+                }
+
+                var (coordenadaFinalX, coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
                 var tipoEvento = DeterminarTipoEvento(sensor.ZonaPatio.TipoZona);
                 var status = DeterminarStatusMoto(tipoEvento);
 
@@ -176,13 +176,15 @@ namespace Trackin.API.Services
             };
         }
 
-        private (double x, double y) CalcularCoordenadas(SensorRFID sensor, double offsetX, double offsetY)
+        private (double x, double y) CalcularCoordenadas(SensorRFID sensor, double potenciaSinal)
         {
-            double baseX = sensor.PosicaoX;
-            double baseY = sensor.PosicaoY;
+            double distancia = CalcularDistanciaPorPotencia(potenciaSinal);
 
-            // offset para ajuste fino da posição
-            return (baseX + offsetX, baseY + offsetY);
+            double angulo = ObterAnguloAleatorio(); // simula direcao do sinal
+            double offsetX = distancia * Math.Cos(angulo);
+            double offsetY = distancia * Math.Sin(angulo);
+
+            return (sensor.PosicaoX + offsetX, sensor.PosicaoY + offsetY);
         }
 
         private double CalcularConfiabilidade(SensorRFID sensor)
@@ -198,6 +200,25 @@ namespace Trackin.API.Services
             // Implementação de notificação via SignalR ou outro mecanismo
             // Exemplo:
             // await _hubContext.Clients.Group($"patio_{localizacao.PatioId}").SendAsync("AtualizacaoLocalizacao", localizacao);
+        }
+
+        private double CalcularDistanciaPorPotencia(double potenciaSinal)
+        {
+            // pot padrao: -30 dBm (perto) a -90 dBm (longe)
+            const double potenciaMaxima = -30; // dBm a 0 metros
+            const double potenciaMinima = -90; // dBm a 20 metros
+
+            // mapeamento linear (adaptar para modelo de propagação real)
+            double distancia = (potenciaSinal - potenciaMaxima) / (potenciaMinima - potenciaMaxima) * 20;
+
+            return Math.Clamp(distancia, 0, 20); // limitado a 20 metros
+        }
+
+        private double ObterAnguloAleatorio()
+        {
+            // simula direcao aleatória (em radianos)
+            Random rand = new();
+            return rand.NextDouble() * 2 * Math.PI;
         }
     }
 }
