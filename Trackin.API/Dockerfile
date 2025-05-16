@@ -1,31 +1,41 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+
+ARG DATABASE__SOURCE
+ARG DATABASE__USER
+ARG DATABASE__PASSWORD
+
+ARG BLING_MICROSERVICE_URL
+ARG AUTH_URL
+
+ENV DATABASE__SOURCE=$DATABASE__SOURCE
+ENV DATABASE__USER=$DATABASE__USER
+ENV DATABASE__PASSWORD=$DATABASE__PASSWORD
+
+ENV BLING_MICROSERVICE_URL=$BLING_MICROSERVICE_URL
+ENV AUTH_URL=$AUTH_URL
+
+WORKDIR /App/Trackin.API
+
+ENV PATH=$PATH:/root/.dotnet/tools
+RUN dotnet tool install --global dotnet-ef
+
+COPY . ./
+RUN dotnet restore Trackin.API.csproj
+
+RUN dotnet publish Trackin.API.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER $APP_UID
+
+ENV DATABASE__SOURCE=$DATABASE__SOURCE
+ENV DATABASE__USER=$DATABASE__USER
+ENV DATABASE__PASSWORD=$DATABASE__PASSWORD
+ENV BLING_MICROSERVICE_URL=$BLING_MICROSERVICE_URL
+ENV AUTH_URL=$AUTH_URL
+
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
+COPY --from=build /app/publish ./
 
-COPY ["Trackin.API/Trackin.API.csproj", "Trackin.API/"]
-RUN dotnet restore "Trackin.API/Trackin.API.csproj"
-
-COPY . .
-WORKDIR "/src/Trackin.API"
-RUN dotnet build "Trackin.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "Trackin.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-FROM base AS final
-WORKDIR /app
-
-ENV DATABASE__SOURCE=${DB_SOURCE}
-ENV DATABASE__USER=${DB_USER}
-ENV DATABASE__PASSWORD=${DB_PASSWORD}
-
-COPY --from=publish /app/publish .
 ENTRYPOINT ["dotnet", "Trackin.API.dll"]
