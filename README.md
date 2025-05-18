@@ -176,4 +176,4 @@ Notas Adicionais
 
 ## Documentação Complementar
 
-📄 [Baixar Documento Complementar (PDF)](doc_challenge_dotnet.pdf?raw=true)
+📄 [Baixar Documento Complementar (PDF)](doc_challenge_dotnet.pdf)
