@@ -173,3 +173,7 @@ Notas Adicionais
 
 -   Esta é a implementação da primeira sprint, atendendo aos requisitos mínimos de CRUD, integração com Oracle via EF Core, e documentação Swagger.
 -   Nem todas as rotas previstas na arquitetura estão implementadas; o foco foi nos controllers listados acima.
+
+## Documentação Complementar
+
+📄 [Baixar Documento Complementar (PDF)](doc_challenge_dotnet.pdf?raw=true)
