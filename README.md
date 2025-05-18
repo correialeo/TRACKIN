@@ -12,6 +12,12 @@ O **Trackin.API** é uma API RESTful desenvolvida com ASP.NET Core 8 para automa
 
 O domínio está completamente mapeado com todas as entidades definidas, mas nem todas as rotas definidas foram implementadas até o momento.
 
+Participantes
+-------------------
+- Julia Brito - RM 558831
+- Leandro Correia - RM 556203
+- Victor Antonopoulos - RM 556313
+
 Rotas Implementadas
 -------------------
 
@@ -173,7 +179,32 @@ Notas Adicionais
 
 -   Esta é a implementação da primeira sprint, atendendo aos requisitos mínimos de CRUD, integração com Oracle via EF Core, e documentação Swagger.
 -   Nem todas as rotas previstas na arquitetura estão implementadas; o foco foi nos controllers listados acima.
+-   O dockerfile está dentro de Trackin.API
 
 ## Documentação Complementar
 
 📄 [Baixar Documento Complementar (PDF)](doc_challenge_dotnet.pdf)
+
+Scripts Azure CLI (Devops)
+----------------
+Criação Resource Group e VM:
+```sh
+az group create --name RG-ChallengeNET --location eastus
+
+az vm create \
+  --resource-group RG-ChallengeNET \
+  --name VM-ChallengeNET \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --public-ip-sku Standard
+```
+
+Abertura de Portas:
+```sh
+az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 80 --priority 1001
+az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 443 --priority 1002
+az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 5000 --priority 1003
+az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 8080 --priority 1010
+az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 8081 --priority 1011
+```
