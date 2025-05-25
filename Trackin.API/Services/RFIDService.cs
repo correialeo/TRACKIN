@@ -65,16 +65,6 @@ namespace Trackin.API.Services
                     };
                 }
 
-                if (leitura.PotenciaSinal > -30 || leitura.PotenciaSinal < -120)
-                {
-                    _logger.LogWarning($"Potência inválida: {leitura.PotenciaSinal} dBm");
-                    return new ServiceResponse<LocalizacaoMotoDTO>
-                    {
-                        Success = false,
-                        Message = "Potência do sinal fora da faixa válida (-30 a -120 dBm)"
-                    };
-                }
-
                 var (coordenadaFinalX, coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
                 var tipoEvento = DeterminarTipoEvento(sensor.ZonaPatio.TipoZona);
                 var status = DeterminarStatusMoto(tipoEvento);
