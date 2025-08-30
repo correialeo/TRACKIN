@@ -94,41 +94,99 @@ namespace Trackin.API.Services
             }
         }
 
-        public async Task<ServiceResponse<IEnumerable<Moto>>> GetAllMotosByPatioAsync(long patioId)
+        public async Task<ServiceResponsePaginado<Moto>> GetAllMotosPaginatedAsync(
+            int pageNumber,
+            int pageSize,
+            string? ordering = null,
+            bool descendingOrder = false)
         {
             try
             {
-                IEnumerable<Moto> motos = await _motoRepository.GetAllByPatioAsync(patioId);
-                return new ServiceResponse<IEnumerable<Moto>>
-                {
-                    Success = true,
-                    Data = motos
-                };
+                (IEnumerable<Moto> items, int totalCount) = await _motoRepository.GetAllPaginatedAsync(
+                    pageNumber, pageSize, ordering, descendingOrder);
+
+                return new ServiceResponsePaginado<Moto>(items, pageNumber, pageSize, totalCount);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<IEnumerable<Moto>>
+                return new ServiceResponsePaginado<Moto>(new List<Moto>(), pageNumber, pageSize, 0)
                 {
                     Success = false,
-                    Message = $"Erro ao obter motos por filial: {ex.Message}"
+                    Message = $"Erro ao obter motos paginadas: {ex.Message}"
                 };
             }
         }
 
-        public async Task<ServiceResponse<IEnumerable<Moto>>> GetAllMotosByStatusAsync(MotoStatus status)
+        public async Task<ServiceResponsePaginado<Moto>> GetMotosByPatioPaginatedAsync(
+            long patioId,
+            int pageNumber,
+            int pageSize,
+            string? ordering = null,
+            bool descendingOrder = false)
         {
             try
             {
-                IEnumerable<Moto> motos = await _motoRepository.GetAllByStatusAsync(status);
-                return new ServiceResponse<IEnumerable<Moto>>
+                IEnumerable<Moto> allMotosInPatio = await _motoRepository.FindAsync(m => m.PatioId == patioId);
+
+                IQueryable<Moto> query = allMotosInPatio.AsQueryable();
+                if (!string.IsNullOrEmpty(ordering))
                 {
-                    Success = true,
-                    Data = motos
-                };
+                    query = ordering.ToLower() switch
+                    {
+                        "placa" => descendingOrder ? query.OrderByDescending(m => m.Placa) : query.OrderBy(m => m.Placa),
+                        "modelo" => descendingOrder ? query.OrderByDescending(m => m.Modelo) : query.OrderBy(m => m.Modelo),
+                        "ano" => descendingOrder ? query.OrderByDescending(m => m.Ano) : query.OrderBy(m => m.Ano),
+                        _ => query.OrderBy(m => m.Id)
+                    };
+                }
+
+                int totalCount = query.Count();
+                List<Moto> items = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+
+                return new ServiceResponsePaginado<Moto>(items, pageNumber, pageSize, totalCount);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<IEnumerable<Moto>>
+                return new ServiceResponsePaginado<Moto>(new List<Moto>(), pageNumber, pageSize, 0)
+                {
+                    Success = false,
+                    Message = $"Erro ao obter motos por filial paginadas: {ex.Message}"
+                };
+            }
+        }
+
+
+        public async Task<ServiceResponsePaginado<Moto>> GetMotosByStatusPaginatedAsync(
+            MotoStatus status,
+            int pageNumber,
+            int pageSize,
+            string? ordering = null,
+            bool descendingOrder = false)
+        {
+            try
+            {
+                IEnumerable<Moto> allMotosWithStatus = await _motoRepository.FindAsync(m => m.Status == status);
+
+                IQueryable<Moto> query = allMotosWithStatus.AsQueryable();
+                if (!string.IsNullOrEmpty(ordering))
+                {
+                    query = ordering.ToLower() switch
+                    {
+                        "placa" => descendingOrder ? query.OrderByDescending(m => m.Placa) : query.OrderBy(m => m.Placa),
+                        "modelo" => descendingOrder ? query.OrderByDescending(m => m.Modelo) : query.OrderBy(m => m.Modelo),
+                        "ano" => descendingOrder ? query.OrderByDescending(m => m.Ano) : query.OrderBy(m => m.Ano),
+                        _ => query.OrderBy(m => m.Id)
+                    };
+                }
+
+                int totalCount = query.Count();
+                List<Moto> items = query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+
+                return new ServiceResponsePaginado<Moto>(items, pageNumber, pageSize, totalCount);
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponsePaginado<Moto>(new List<Moto>(), pageNumber, pageSize, 0)
                 {
                     Success = false,
                     Message = $"Erro ao obter motos por status: {ex.Message}"

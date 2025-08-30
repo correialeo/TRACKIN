@@ -72,7 +72,7 @@ namespace Trackin.API.Controllers
         /// Retorna todas as motos
         /// </summary>
         /// <returns>Lista de todas as motos</returns>
-        [HttpGet]
+        [HttpGet("all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAll()
@@ -82,21 +82,31 @@ namespace Trackin.API.Controllers
             {
                 return StatusCode(500, response.Message);
             }
-
             return Ok(response.Data);
         }
 
         /// <summary>
-        /// Retorna todas as motos de um determinado pátio
+        /// Retorna motos com paginação
         /// </summary>
-        /// <param name="patioId">ID do pátio</param>
-        /// <returns>Lista de motos do pátio</returns>
-        [HttpGet("patio/{patioId}")]
+        /// <param name="paginacao">Parâmetros de paginação</param>
+        /// <returns>Lista paginada de motos</returns>
+        [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetByFilial(long patioId)
+        public async Task<IActionResult> GetPaginated([FromQuery] PaginacaoDTO paginacao)
         {
-            ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosByPatioAsync(patioId);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            ServiceResponsePaginado<Moto> response = await _motoService.GetAllMotosPaginatedAsync(
+                paginacao.PageNumber,
+                paginacao.PageSize,
+                paginacao.Ordering,
+                paginacao.DescendingOrder);
+
             if (!response.Success)
             {
                 return StatusCode(500, response.Message);
@@ -106,16 +116,56 @@ namespace Trackin.API.Controllers
         }
 
         /// <summary>
-        /// Retorna todas as motos com um determinado status
+        /// Retorna todas as motos de um determinado pátio com paginação
         /// </summary>
-        /// <param name="status">Status da moto (enum)</param>
-        /// <returns>Lista de motos com o status especificado</returns>
-        [HttpGet("status/{status}")]
+        /// <param name="patioId">ID do pátio</param>
+        /// /// <param name="paginacao">Parâmetros de paginação</param>
+        /// <returns>Lista de motos do pátio</returns>
+        [HttpGet("patio/{patioId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetByStatus(MotoStatus status)
+        public async Task<IActionResult> GetByFilial(long patioId, [FromQuery] PaginacaoDTO paginacao)
         {
-            ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosByStatusAsync(status);
+            ServiceResponsePaginado<Moto> response = await _motoService.GetMotosByPatioPaginatedAsync(
+                patioId,
+                paginacao.PageNumber,
+                paginacao.PageSize,
+                paginacao.Ordering,
+                paginacao.DescendingOrder);
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
+        }
+
+        /// <summary>
+        /// Retorna motos por status com paginação
+        /// </summary>
+        /// <param name="status">Status da moto</param>
+        /// <param name="paginacao">Parâmetros de paginação</param>
+        /// <returns>Lista paginada de motos com o status especificado</returns>
+        [HttpGet("status/{status}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetByStatusPaginated(
+            MotoStatus status,
+            [FromQuery] PaginacaoDTO paginacao)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            ServiceResponsePaginado<Moto> response = await _motoService.GetMotosByStatusPaginatedAsync(
+                status,
+                paginacao.PageNumber,
+                paginacao.PageSize,
+                paginacao.Ordering,
+                paginacao.DescendingOrder);
+
             if (!response.Success)
             {
                 return StatusCode(500, response.Message);
