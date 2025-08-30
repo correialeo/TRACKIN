@@ -26,6 +26,25 @@ namespace Trackin.API.Infrastructure.Persistence.Repositories
             return await _dbSet.ToListAsync();
         }
 
+        public virtual async Task<(IEnumerable<T> Items, int TotalCount)> GetAllPaginatedAsync(int pageNumber, int pageSize, string? ordering = null, bool descendingOrder = false)
+        {
+            IQueryable<T> query = _dbSet;
+            if (!string.IsNullOrEmpty(ordering))
+            {
+                ParameterExpression parameter = Expression.Parameter(typeof(T), "x");
+                MemberExpression property = Expression.Property(parameter, ordering);
+                LambdaExpression lambda = Expression.Lambda(property, parameter);
+                string methodName = descendingOrder ? "OrderByDescending" : "OrderBy";
+                var method = typeof(Queryable).GetMethods()
+                    .First(m => m.Name == methodName && m.GetParameters().Length == 2)
+                    .MakeGenericMethod(typeof(T), property.Type);
+                query = (IQueryable<T>)method.Invoke(null, new object[] { query, lambda });
+            }
+            int totalCount = await query.CountAsync();
+            List<T> items = await query.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+            return (items, totalCount);
+        }
+
         public virtual async Task<IEnumerable<T>> FindAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.Where(predicate).ToListAsync();
