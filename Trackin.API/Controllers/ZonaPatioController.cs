@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Trackin.API.Common;
 using Trackin.API.Domain.Entity;
 using Trackin.API.DTOs;
-using Trackin.API.Infrastructure.Persistence.Repositories;
+using Trackin.API.Services;
 
 namespace Trackin.API.Controllers
 {
@@ -11,11 +11,44 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class ZonaPatioController : ControllerBase
     {
-        private readonly IZonaPatioRepository _zonaPatioRepository;
+        private readonly ZonaPatioService _zonaPatioService;
 
-        public ZonaPatioController(IZonaPatioRepository zonaPatioRepository)
+        public ZonaPatioController(ZonaPatioService zonaPatioService)
         {
-            _zonaPatioRepository = zonaPatioRepository;
+            _zonaPatioService = zonaPatioService;
+        }
+
+        /// <summary>
+        /// Recupera todas as zonas de pátio cadastradas com paginação
+        /// </summary>
+        /// <param name="paginacao">Parâmetros de paginação</param>
+        /// <returns>Uma lista paginada de zonas de pátio</returns>
+        /// <response code="200">Retorna a lista paginada de zonas de pátio</response>
+        /// <response code="400">Quando os parâmetros de paginação são inválidos</response>
+        /// <response code="500">Erro interno do servidor</response>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetZonasPatio([FromQuery] PaginacaoDTO paginacao)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            ServiceResponsePaginado<ZonaPatio> response = await _zonaPatioService.GetAllZonasPatiosPaginatedAsync(
+                paginacao.PageNumber,
+                paginacao.PageSize,
+                paginacao.Ordering,
+                paginacao.DescendingOrder);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -24,17 +57,26 @@ namespace Trackin.API.Controllers
         /// <returns>Uma lista de zonas de pátio</returns>
         /// <response code="200">Retorna a lista de zonas de pátio</response>
         /// <response code="404">Quando não há zonas de pátio cadastradas</response>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ZonaPatio>))]
+        /// <response code="500">Erro interno do servidor</response>
+        [HttpGet("all")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<ZonaPatio>>> GetZonasPatio()
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAllZonasPatio()
         {
-            IEnumerable<ZonaPatio> zonasPatio = await _zonaPatioRepository.GetAllAsync();
-            if (zonasPatio == null || !zonasPatio.Any())
+            ServiceResponse<IEnumerable<ZonaPatio>> response = await _zonaPatioService.GetAllZonasPatiosAsync();
+
+            if (response.Message == "Nenhuma zona de pátio encontrada.")
             {
-                return NotFound("Nenhuma zona de pátio encontrada.");
+                return NotFound(response.Message);
             }
-            return Ok(zonasPatio);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -44,19 +86,26 @@ namespace Trackin.API.Controllers
         /// <returns>Os dados da zona de pátio solicitada</returns>
         /// <response code="200">Retorna a zona de pátio solicitada</response>
         /// <response code="404">Quando a zona de pátio não é encontrada</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ZonaPatio))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<ZonaPatio>> GetZonaPatio(long id)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetZonaPatio(long id)
         {
-            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
+            ServiceResponse<ZonaPatio> response = await _zonaPatioService.GetZonaPatioByIdAsync(id);
 
-            if (zonaPatio == null)
+            if (response.Message?.Contains("não encontrada") == true)
             {
-                return NotFound($"Zona de pátio com ID {id} não encontrada.");
+                return NotFound(response.Message);
             }
 
-            return Ok(zonaPatio);
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -68,10 +117,12 @@ namespace Trackin.API.Controllers
         /// <response code="204">Quando a zona de pátio é atualizada com sucesso</response>
         /// <response code="400">Quando os dados fornecidos são inválidos</response> 
         /// <response code="404">Quando a zona de pátio não é encontrada</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PutZonaPatio(long id, CriarZonaPatioDTO zonaPatioDto)
         {
             if (!ModelState.IsValid)
@@ -79,35 +130,16 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
-            if (zonaPatio == null)
+            ServiceResponse<ZonaPatio> result = await _zonaPatioService.UpdateZonaPatioAsync(id, zonaPatioDto);
+
+            if (result.Message?.Contains("não encontrada") == true)
             {
-                return NotFound($"Zona de pátio com ID {id} não encontrada.");
+                return NotFound(result.Message);
             }
 
-            zonaPatio.PatioId = zonaPatioDto.PatioId;
-            zonaPatio.Nome = zonaPatioDto.Nome;
-            zonaPatio.TipoZona = zonaPatioDto.TipoZona;
-            zonaPatio.CoordenadaInicialX = zonaPatioDto.CoordenadaInicialX;
-            zonaPatio.CoordenadaInicialY = zonaPatioDto.CoordenadaInicialY;
-            zonaPatio.CoordenadaFinalX = zonaPatioDto.CoordenadaFinalX;
-            zonaPatio.CoordenadaFinalY = zonaPatioDto.CoordenadaFinalY;
-            zonaPatio.Cor = zonaPatioDto.Cor;
-
-            try
+            if (!result.Success)
             {
-                await _zonaPatioRepository.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ZonaPatioExists(id))
-                {
-                    return NotFound($"Zona de pátio com ID {id} não encontrada.");
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest(result.Message);
             }
 
             return NoContent();
@@ -120,32 +152,26 @@ namespace Trackin.API.Controllers
         /// <returns>A zona de pátio recém-criada</returns>
         /// <response code="201">Retorna a zona de pátio recém-criada</response>
         /// <response code="400">Quando os dados fornecidos são inválidos</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ZonaPatio))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<ZonaPatio>> CriarZonaPatio([FromBody] CriarZonaPatioDTO dto)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> PostZonaPatio([FromBody] CriarZonaPatioDTO dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            ZonaPatio? zonaPatio = new ZonaPatio
+            ServiceResponse<ZonaPatio> result = await _zonaPatioService.CreateZonaPatioAsync(dto);
+
+            if (!result.Success)
             {
-                Nome = dto.Nome,
-                TipoZona = dto.TipoZona,
-                CoordenadaInicialX = dto.CoordenadaInicialX,
-                CoordenadaInicialY = dto.CoordenadaInicialY,
-                CoordenadaFinalX = dto.CoordenadaFinalX,
-                CoordenadaFinalY = dto.CoordenadaFinalY,
-                Cor = dto.Cor,
-                PatioId = dto.PatioId
-            };
+                return BadRequest(result.Message);
+            }
 
-            await _zonaPatioRepository.AddAsync(zonaPatio);
-            await _zonaPatioRepository.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetZonaPatio), new { id = zonaPatio.Id }, zonaPatio);
+            return CreatedAtAction(nameof(GetZonaPatio), new { id = result.Data.Id }, result.Data);
         }
 
         /// <summary>
@@ -155,31 +181,26 @@ namespace Trackin.API.Controllers
         /// <returns>Sem conteúdo</returns>
         /// <response code="204">Quando a zona de pátio é removida com sucesso</response>
         /// <response code="404">Quando a zona de pátio não é encontrada</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteZonaPatio(long id)
         {
-            ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
-            if (zonaPatio == null)
+            ServiceResponse<ZonaPatio> result = await _zonaPatioService.DeleteZonaPatioAsync(id);
+
+            if (result.Message?.Contains("não encontrada") == true)
             {
-                return NotFound($"Zona de pátio com ID {id} não encontrada.");
+                return NotFound(result.Message);
             }
 
-            await _zonaPatioRepository.RemoveAsync(zonaPatio);
-            await _zonaPatioRepository.SaveChangesAsync();
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
 
             return NoContent();
-        }
-
-        /// <summary>
-        /// Verifica se uma zona de pátio existe pelo ID
-        /// </summary>
-        /// <param name="id">ID da zona de pátio</param>
-        /// <returns>Verdadeiro se a zona de pátio existe, falso caso contrário</returns>
-        private bool ZonaPatioExists(long id)
-        {
-            return (_zonaPatioRepository.GetAllAsync().Result.Any(e => e.Id == id));
         }
     }
 }
