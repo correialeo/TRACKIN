@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Trackin.API.Common;
 using Trackin.API.Domain.Entity;
 using Trackin.API.DTOs;
-using Trackin.API.Infrastructure.Persistence.Repositories;
+using Trackin.API.Services;
 
 namespace Trackin.API.Controllers
 {
@@ -11,11 +11,44 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class SensorRFIDController : ControllerBase
     {
-        private readonly ISensorRFIDRepository _sensorRFIDRepository;
+        private readonly SensorRFIDService _sensorRFIDService;
 
-        public SensorRFIDController(ISensorRFIDRepository sensorRFIDRepository)
+        public SensorRFIDController(SensorRFIDService sensorRFIDService)
         {
-            _sensorRFIDRepository = sensorRFIDRepository;
+            _sensorRFIDService = sensorRFIDService;
+        }
+
+        /// <summary>
+        /// Recupera todos os sensores RFID cadastrados com paginação
+        /// </summary>
+        /// <param name="paginacao">Parâmetros de paginação</param>
+        /// <returns>Uma lista paginada de sensores RFID</returns>
+        /// <response code="200">Retorna a lista paginada de sensores</response>
+        /// <response code="400">Quando os parâmetros de paginação são inválidos</response>
+        /// <response code="500">Erro interno do servidor</response>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetSensoresRFID([FromQuery] PaginacaoDTO paginacao)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            ServiceResponsePaginado<SensorRFID> response = await _sensorRFIDService.GetAllSensoresRFIDPaginatedAsync(
+                paginacao.PageNumber,
+                paginacao.PageSize,
+                paginacao.Ordering,
+                paginacao.DescendingOrder);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -24,17 +57,26 @@ namespace Trackin.API.Controllers
         /// <returns>Uma lista de sensores RFID</returns>
         /// <response code="200">Retorna a lista de sensores</response>
         /// <response code="404">Quando não há sensores cadastrados</response>
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<SensorRFID>))]
+        /// <response code="500">Erro interno do servidor</response>
+        [HttpGet("all")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<IEnumerable<SensorRFID>>> GetSensoresRFID()
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetAllSensoresRFID()
         {
-            IEnumerable<SensorRFID> sensores = await _sensorRFIDRepository.GetAllAsync();
-            if (sensores == null || !sensores.Any())
+            ServiceResponse<IEnumerable<SensorRFID>> response = await _sensorRFIDService.GetAllSensoresRFIDAsync();
+
+            if (response.Message == "Nenhum sensor RFID encontrado.")
             {
-                return NotFound("Nenhum sensor RFID encontrado.");
+                return NotFound(response.Message);
             }
-            return Ok(sensores);
+
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -44,19 +86,26 @@ namespace Trackin.API.Controllers
         /// <returns>Os dados do sensor solicitado</returns>
         /// <response code="200">Retorna o sensor solicitado</response>
         /// <response code="404">Quando o sensor não é encontrado</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(SensorRFID))]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<ActionResult<SensorRFID>> GetSensorRFID(long id)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetSensorRFID(long id)
         {
-            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+            ServiceResponse<SensorRFID> response = await _sensorRFIDService.GetSensorRFIDByIdAsync(id);
 
-            if (sensorRFID == null)
+            if (response.Message?.Contains("não encontrado") == true)
             {
-                return NotFound($"Sensor RFID com ID {id} não encontrado.");
+                return NotFound(response.Message);
             }
 
-            return Ok(sensorRFID);
+            if (!response.Success)
+            {
+                return StatusCode(500, response.Message);
+            }
+
+            return Ok(response.Data);
         }
 
         /// <summary>
@@ -68,10 +117,12 @@ namespace Trackin.API.Controllers
         /// <response code="204">Quando o sensor é atualizado com sucesso</response>
         /// <response code="400">Quando os dados fornecidos são inválidos</response>
         /// <response code="404">Quando o sensor não é encontrado</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PutSensorRFID(long id, CriarSensorRFIdDTO sensorRFIDDTO)
         {
             if (!ModelState.IsValid)
@@ -79,34 +130,16 @@ namespace Trackin.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
-            if (sensorRFID == null)
+            ServiceResponse<SensorRFID> result = await _sensorRFIDService.UpdateSensorRFIDAsync(id, sensorRFIDDTO);
+
+            if (result.Message?.Contains("não encontrado") == true)
             {
-                return NotFound($"Sensor RFID com ID {id} não encontrado.");
+                return NotFound(result.Message);
             }
 
-            sensorRFID.ZonaPatioId = sensorRFIDDTO.ZonaPatioId;
-            sensorRFID.PatioId = sensorRFIDDTO.PatioId;
-            sensorRFID.Posicao = sensorRFIDDTO.Posicao;
-            sensorRFID.PosicaoX = sensorRFIDDTO.PosicaoX;
-            sensorRFID.PosicaoY = sensorRFIDDTO.PosicaoY;
-            sensorRFID.Altura = sensorRFIDDTO.Altura;
-            sensorRFID.AnguloVisao = sensorRFIDDTO.AnguloVisao;
-
-            try
+            if (!result.Success)
             {
-                await _sensorRFIDRepository.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!SensorRFIDExists(id))
-                {
-                    return NotFound($"Sensor RFID com ID {id} não encontrado.");
-                }
-                else
-                {
-                    throw;
-                }
+                return BadRequest(result.Message);
             }
 
             return NoContent();
@@ -119,31 +152,26 @@ namespace Trackin.API.Controllers
         /// <returns>O sensor recém-criado</returns>
         /// <response code="201">Retorna o sensor recém-criado</response>
         /// <response code="400">Quando os dados fornecidos são inválidos</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(SensorRFID))]
+        [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<SensorRFID>> PostSensorRFID(CriarSensorRFIdDTO sensorRFID)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> PostSensorRFID(CriarSensorRFIdDTO sensorRFID)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            SensorRFID sensor = new SensorRFID
+            ServiceResponse<SensorRFID> result = await _sensorRFIDService.CreateSensorRFIDAsync(sensorRFID);
+
+            if (!result.Success)
             {
-                ZonaPatioId = sensorRFID.ZonaPatioId,
-                PatioId = sensorRFID.PatioId,
-                Posicao = sensorRFID.Posicao,
-                PosicaoX = sensorRFID.PosicaoX,
-                PosicaoY = sensorRFID.PosicaoY,
-                Altura = sensorRFID.Altura,
-                AnguloVisao = sensorRFID.AnguloVisao
-            };
+                return BadRequest(result.Message);
+            }
 
-            await _sensorRFIDRepository.AddAsync(sensor);
-            await _sensorRFIDRepository.SaveChangesAsync();
-
-            return CreatedAtAction(nameof(GetSensorRFID), new { id = sensor.Id }, sensor);
+            return CreatedAtAction(nameof(GetSensorRFID), new { id = result.Data.Id }, result.Data);
         }
 
         /// <summary>
@@ -153,31 +181,26 @@ namespace Trackin.API.Controllers
         /// <returns>Sem conteúdo</returns>
         /// <response code="204">Quando o sensor é removido com sucesso</response>
         /// <response code="404">Quando o sensor não é encontrado</response>
+        /// <response code="500">Erro interno do servidor</response>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteSensorRFID(long id)
         {
-            SensorRFID? sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
-            if (sensorRFID == null)
+            ServiceResponse<SensorRFID> result = await _sensorRFIDService.DeleteSensorRFIDAsync(id);
+
+            if (result.Message?.Contains("não encontrado") == true)
             {
-                return NotFound($"Sensor RFID com ID {id} não encontrado.");
+                return NotFound(result.Message);
             }
 
-            await _sensorRFIDRepository.RemoveAsync(sensorRFID);
-            await _sensorRFIDRepository.SaveChangesAsync();
+            if (!result.Success)
+            {
+                return BadRequest(result.Message);
+            }
 
             return NoContent();
-        }
-
-        /// <summary>
-        /// Verifica se um sensor RFID existe pelo ID
-        /// </summary>
-        /// <param name="id">ID do sensor</param>
-        /// <returns>Verdadeiro se o sensor existe, falso caso contrário</returns>
-        private bool SensorRFIDExists(long id)
-        {
-            return _sensorRFIDRepository.GetAllAsync().Result.Any(e => e.Id == id);
         }
     }
 }
