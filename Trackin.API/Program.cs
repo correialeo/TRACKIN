@@ -43,6 +43,9 @@ builder.Services.AddDbContext<TrackinContext>(options =>
 
 builder.Services.AddScoped<MotoService>();
 builder.Services.AddScoped<RFIDService>();
+builder.Services.AddScoped<PatioService>();
+builder.Services.AddScoped<ZonaPatioService>();
+builder.Services.AddScoped<SensorRFIDService>();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
