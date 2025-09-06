@@ -1,0 +1,21 @@
+﻿using Trackin.Domain.Enums;
+
+namespace Trackin.Domain.Entity
+{
+    public class ZonaPatio
+    {
+        public long Id { get; set; }
+        public long PatioId { get; set; } // FK para Pátio
+        public string Nome { get; set; } = string.Empty; // Manutenção, Estacionamento, Lavagem, etc
+        public TipoZona TipoZona { get; set; }
+        public double CoordenadaInicialX { get; set; } 
+        public double CoordenadaInicialY { get; set; } 
+        public double CoordenadaFinalX { get; set; } 
+        public double CoordenadaFinalY { get; set; } 
+        public string Cor { get; set; } = string.Empty; // Cor para representação visual
+
+
+        public Patio Patio { get; set; }
+        public ICollection<SensorRFID> SensoresRFID { get; set; } = new List<SensorRFID>();
+    }
+}
