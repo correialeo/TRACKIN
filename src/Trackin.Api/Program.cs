@@ -1,6 +1,5 @@
 using System.Reflection;
 using dotenv.net;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Trackin.Api;
 using Trackin.Application.Interfaces;
@@ -8,6 +7,7 @@ using Trackin.Application.Services;
 using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
 using Trackin.Infrastructure.Persistence.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 DotEnv.Load();
 
@@ -39,7 +39,7 @@ string connectionString = Settings.GetConnectionString();
 
 builder.Services.AddDbContext<TrackinContext>(options =>
     {
-        options.UseOracle(connectionString);
+        options.UseSqlServer(connectionString);
     }
  );
 

@@ -17,11 +17,12 @@
         public static string GetConnectionString()
         {
             string databaseSource = Environment.GetEnvironmentVariable("DATABASE__SOURCE");
+            string databaseName = Environment.GetEnvironmentVariable("DATABASE__NAME");
             string databaseUser = Environment.GetEnvironmentVariable("DATABASE__USER");
             string databasePass = Environment.GetEnvironmentVariable("DATABASE__PASSWORD");
 
-            string connectString = _configuration.GetConnectionString("Oracle");
-            connectString = string.Format(connectString, databaseSource, databaseUser, databasePass);
+            string connectString = _configuration.GetConnectionString("SqlServer");
+            connectString = string.Format(connectString, databaseSource, databaseName, databaseUser, databasePass);
 
             return connectString;
         }
