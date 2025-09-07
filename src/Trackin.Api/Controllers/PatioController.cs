@@ -9,7 +9,7 @@ namespace Trackin.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class PatioController : ControllerBase
+    public class PatioController : BaseController
     {
         private readonly IPatioService _patioService;
 
@@ -32,23 +32,13 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetPatios([FromQuery] PaginacaoDTO paginacao)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             ServiceResponsePaginado<Patio> response = await _patioService.GetAllPatiosPaginatedAsync(
                 paginacao.PageNumber,
                 paginacao.PageSize,
                 paginacao.Ordering,
                 paginacao.DescendingOrder);
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            
+            return FromServicePaged(response);
         }
 
         /// <summary>
@@ -65,18 +55,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetAllPatios()
         {
             ServiceResponse<IEnumerable<Patio>> response = await _patioService.GetAllPatiosAsync();
-
-            if (response.Message == "Nenhum pátio encontrado.")
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            return FromService(response);
         }
 
         /// <summary>
@@ -94,18 +73,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetPatio(long id)
         {
             ServiceResponse<Patio> response = await _patioService.GetPatioByIdAsync(id);
-
-            if (response.Message?.Contains("não encontrado") == true)
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            return FromService(response);
         }
 
         /// <summary>
@@ -122,18 +90,11 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CriarPatio([FromBody] CriarPatioDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             ServiceResponse<Patio> result = await _patioService.CreatePatioAsync(dto);
-
             if (!result.Success)
             {
                 return BadRequest(result.Message);
             }
-
             return CreatedAtAction(nameof(GetPatio), new { id = result.Data.Id }, result.Data);
         }
 
@@ -153,14 +114,9 @@ namespace Trackin.API.Controllers
         {
             ServiceResponse<Patio> result = await _patioService.DeletePatioAsync(id);
 
-            if (result.Message?.Contains("não encontrado") == true)
-            {
-                return NotFound(result.Message);
-            }
-
             if (!result.Success)
             {
-                return BadRequest(result.Message);
+                return FromService(result);
             }
 
             return NoContent();
