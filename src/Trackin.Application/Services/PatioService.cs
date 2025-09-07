@@ -11,9 +11,24 @@ namespace Trackin.Application.Services
     {
         private readonly IPatioRepository _patioRepository;
 
+        private const string PatioNaoExiste = "Não existe pátio cadastrado com id informado.";
+
         public PatioService(IPatioRepository patioRepository)
         {
             _patioRepository = patioRepository;
+        }
+        
+        private async Task<Patio?> ObterPatio(long id) => await _patioRepository.GetByIdAsync(id);
+
+        private ServiceResponse<T> Sucesso<T>(T data, string message = "") => new() { Success = true, Data = data, Message = message };
+
+        private ServiceResponse<T> Erro<T>(string message) => new() { Success = false, Message = message };
+
+        private (bool podeRemover, string? mensagem) PodeRemoverPatio(Patio patio)
+        {
+            if (patio.Cameras.Any() || patio.Zonas.Any() || patio.SensoresRFID.Any())
+                return (false, "Não é possível remover um pátio que possui câmeras, zonas ou sensores associados.");
+            return (true, null);
         }
 
         public async Task<ServiceResponsePaginado<Patio>> GetAllPatiosPaginatedAsync(
@@ -24,7 +39,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                (IEnumerable<Patio> items, int totalCount) = await _patioRepository.GetAllPaginatedAsync(
+                var( items, totalCount) = await _patioRepository.GetAllPaginatedAsync(
                     pageNumber, pageSize, ordering, descendingOrder);
 
                 return new ServiceResponsePaginado<Patio>(items, pageNumber, pageSize, totalCount);
@@ -43,29 +58,15 @@ namespace Trackin.Application.Services
         {
             try
             {
-                IEnumerable<Patio> patios = await _patioRepository.GetAllAsync();
-                if (patios == null || !patios.Any())
-                {
-                    return new ServiceResponse<IEnumerable<Patio>>
-                    {
-                        Success = false,
-                        Message = "Nenhum pátio encontrado."
-                    };
-                }
+              var patios = await _patioRepository.GetAllAsync();
+              if (!patios.Any())
+                  return Erro<IEnumerable<Patio>>("Nenhum pátio encontrado");
 
-                return new ServiceResponse<IEnumerable<Patio>>
-                {
-                    Success = true,
-                    Data = patios
-                };
+              return Sucesso(patios);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<IEnumerable<Patio>>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter pátios: {ex.Message}"
-                };
+                return Erro<IEnumerable<Patio>>( $"Erro ao obter pátios: {ex.Message}");
             }
         }
 
@@ -73,29 +74,15 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio? patio = await _patioRepository.GetByIdAsync(id);
-                if (patio == null)
-                {
-                    return new ServiceResponse<Patio>
-                    {
-                        Success = false,
-                        Message = $"Pátio com ID {id} não encontrado."
-                    };
-                }
-
-                return new ServiceResponse<Patio>
-                {
-                    Success = true,
-                    Data = patio
-                };
+                var patio = await ObterPatio(id);
+                if (patio == null) 
+                    return Erro<Patio>(PatioNaoExiste);
+                
+                return Sucesso(patio);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Patio>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter pátio: {ex.Message}"
-                };
+                return Erro<Patio>($"Erro ao obter pátio:{ex.Message}");
             }
         }
 
@@ -116,28 +103,15 @@ namespace Trackin.Application.Services
                 await _patioRepository.AddAsync(patio);
                 await _patioRepository.SaveChangesAsync();
 
-                return new ServiceResponse<Patio>
-                {
-                    Success = true,
-                    Message = "Pátio criado com sucesso.",
-                    Data = patio
-                };
+                return Sucesso(patio, "Pátio criado com sucesso.");
             }
             catch (ArgumentException ex)
             {
-                return new ServiceResponse<Patio>
-                {
-                    Success = false,
-                    Message = $"Dados inválidos: {ex.Message}"
-                };
+                return Erro<Patio>($"dados inválidos: {ex.Message}");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Patio>
-                {
-                    Success = false,
-                    Message = $"Erro ao criar pátio: {ex.Message}"
-                };
+                return Erro<Patio>($"Erro ao criar pátio: {ex.Message}");
             }
         }
 
@@ -145,42 +119,20 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio? patio = await _patioRepository.GetByIdAsync(id);
-                if (patio == null)
-                {
-                    return new ServiceResponse<Patio>
-                    {
-                        Success = false,
-                        Message = $"Pátio com ID {id} não encontrado."
-                    };
-                }
+                var patio = await ObterPatio(id);
+                if (patio == null) return Erro<Patio>(PatioNaoExiste);
 
-                if (patio.Cameras.Any() || patio.Zonas.Any() || patio.SensoresRFID.Any())
-                {
-                    return new ServiceResponse<Patio>
-                    {
-                        Success = false,
-                        Message = "Não é possível remover um pátio que possui câmeras, zonas ou sensores associados."
-                    };
-                }
+                var (podeRemover, mensagem) = PodeRemoverPatio(patio);
+                if (!podeRemover) return Erro<Patio>(mensagem!);
 
                 await _patioRepository.RemoveAsync(patio);
                 await _patioRepository.SaveChangesAsync();
 
-                return new ServiceResponse<Patio>
-                {
-                    Success = true,
-                    Message = "Pátio removido com sucesso.",
-                    Data = patio
-                };
+                return Sucesso(patio, "Pátio removido com sucesso");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Patio>
-                {
-                    Success = false,
-                    Message = $"Erro ao remover pátio: {ex.Message}"
-                };
+                return Erro<Patio>($"Erro ao remover pátio: {ex.Message}");
             }
         }
 
@@ -188,31 +140,15 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio patio = await _patioRepository.GetByIdAsync(patioId);
-                if (patio == null)
-                {
-                    return new ServiceResponse<double>
-                    {
-                        Success = false,
-                        Message = $"Pátio com ID {patioId} não encontrado."
-                    };
-                }
+                var patio = await ObterPatio(patioId);
+                if (patio == null) return Erro<double>(PatioNaoExiste);
 
                 double taxaOcupacao = patio.CalcularTaxaOcupacao();
-
-                return new ServiceResponse<double>
-                {
-                    Success = true,
-                    Data = taxaOcupacao
-                };
+                return Sucesso(taxaOcupacao);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<double>
-                {
-                    Success = false,
-                    Message = $"Erro ao calcular taxa de ocupação: {ex.Message}"
-                };
+               return Erro<double>($"Erro ao calcular taxa: {ex.Message}");
             }
         }
 
@@ -220,32 +156,19 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio patio = await _patioRepository.GetByIdAsync(patioId);
-                if (patio == null)
-                {
-                    return new ServiceResponse<bool>
-                    {
-                        Success = false,
-                        Message = $"Pátio com ID {patioId} não encontrado."
-                    };
-                }
+                var patio = await ObterPatio(patioId);
+                if (patio == null) return Erro<bool>(PatioNaoExiste);
 
                 Coordenada coordenada = new Coordenada(x, y);
                 bool coordenadaValida = patio.CoordenadaEstaValida(coordenada);
 
-                return new ServiceResponse<bool>
-                {
-                    Success = true,
-                    Data = coordenadaValida
-                };
+                return Sucesso(coordenadaValida);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<bool>
                 {
-                    Success = false,
-                    Message = $"Erro ao validar coordenada: {ex.Message}"
-                };
+                    return Erro<bool>($"Erro ao validar coordenada: {ex.Message}");
+                }
             }
         }
     }
