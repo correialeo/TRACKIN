@@ -92,9 +92,8 @@ namespace Trackin.API.Controllers
         {
             ServiceResponse<Patio> result = await _patioService.CreatePatioAsync(dto);
             if (!result.Success)
-            {
                 return BadRequest(result.Message);
-            }
+            
             return CreatedAtAction(nameof(GetPatio), new { id = result.Data.Id }, result.Data);
         }
 
@@ -115,9 +114,7 @@ namespace Trackin.API.Controllers
             ServiceResponse<Patio> result = await _patioService.DeletePatioAsync(id);
 
             if (!result.Success)
-            {
                 return FromService(result);
-            }
 
             return NoContent();
         }
