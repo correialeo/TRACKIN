@@ -2,13 +2,14 @@
 
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Enums;
 using Trackin.Domain.Interfaces;
 
 namespace Trackin.Application.Services
 {
-    public class MotoService
+    public class MotoService : IMotoService
     {
         private readonly IMotoRepository _motoRepository;
         public MotoService(IMotoRepository motoRepository)
@@ -193,7 +194,7 @@ namespace Trackin.Application.Services
             }
         }
 
-        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id, EditarMotoDTO motoDTO)
+        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id)
         {
             try
             {

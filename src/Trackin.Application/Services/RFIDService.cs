@@ -2,13 +2,14 @@
 using Microsoft.Extensions.Logging;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Enums;
 using Trackin.Domain.Interfaces;
 
 namespace Trackin.Application.Services
 {
-    public class RFIDService
+    public class RFIDService : IRFIDService
     {
         private readonly IMotoRepository _motoRepository;
         private readonly ISensorRFIDRepository _sensorRepository;

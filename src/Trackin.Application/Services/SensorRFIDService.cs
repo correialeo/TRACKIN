@@ -1,12 +1,13 @@
 ﻿
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Interfaces;
 
 namespace Trackin.Application.Services
 {
-    public class SensorRFIDService
+    public class SensorRFIDService : ISensorRFIDService
     {
         private readonly ISensorRFIDRepository _sensorRFIDRepository;
 

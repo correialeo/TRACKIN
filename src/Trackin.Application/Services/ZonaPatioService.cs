@@ -1,12 +1,13 @@
 ﻿
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Interfaces;
 
 namespace Trackin.Application.Services
 {
-    public class ZonaPatioService
+    public class ZonaPatioService : IZonaPatioService
     {
         private readonly IZonaPatioRepository _zonaPatioRepository;
 
