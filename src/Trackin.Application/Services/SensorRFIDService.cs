@@ -1,9 +1,9 @@
-﻿
-using Trackin.Application.Common;
+﻿using Trackin.Application.Common;
 using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Interfaces;
+using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Application.Services
 {
@@ -103,16 +103,16 @@ namespace Trackin.Application.Services
         {
             try
             {
-                SensorRFID sensor = new SensorRFID
-                {
-                    ZonaPatioId = sensorRFIDDTO.ZonaPatioId,
-                    PatioId = sensorRFIDDTO.PatioId,
-                    Posicao = sensorRFIDDTO.Posicao,
-                    PosicaoX = sensorRFIDDTO.PosicaoX,
-                    PosicaoY = sensorRFIDDTO.PosicaoY,
-                    Altura = sensorRFIDDTO.Altura,
-                    AnguloVisao = sensorRFIDDTO.AnguloVisao
-                };
+                var coordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
+
+                var sensor = new SensorRFID(
+                    sensorRFIDDTO.ZonaPatioId,
+                    sensorRFIDDTO.PatioId,
+                    sensorRFIDDTO.Posicao,
+                    coordenada,
+                    sensorRFIDDTO.Altura,
+                    sensorRFIDDTO.AnguloVisao
+                );
 
                 await _sensorRFIDRepository.AddAsync(sensor);
                 await _sensorRFIDRepository.SaveChangesAsync();
@@ -122,6 +122,14 @@ namespace Trackin.Application.Services
                     Success = true,
                     Message = "Sensor RFID criado com sucesso.",
                     Data = sensor
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Dados inválidos: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -148,13 +156,10 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                sensorRFID.ZonaPatioId = sensorRFIDDTO.ZonaPatioId;
-                sensorRFID.PatioId = sensorRFIDDTO.PatioId;
-                sensorRFID.Posicao = sensorRFIDDTO.Posicao;
-                sensorRFID.PosicaoX = sensorRFIDDTO.PosicaoX;
-                sensorRFID.PosicaoY = sensorRFIDDTO.PosicaoY;
-                sensorRFID.Altura = sensorRFIDDTO.Altura;
-                sensorRFID.AnguloVisao = sensorRFIDDTO.AnguloVisao;
+                var novaCoordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
+                sensorRFID.AtualizarPosicao(novaCoordenada, sensorRFIDDTO.Altura);
+
+                // criar metodos na entidade para atualizar outros campos 
 
                 await _sensorRFIDRepository.SaveChangesAsync();
 
@@ -163,6 +168,22 @@ namespace Trackin.Application.Services
                     Success = true,
                     Message = "Sensor RFID atualizado com sucesso.",
                     Data = sensorRFID
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Dados inválidos: {ex.Message}"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Operação inválida: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -189,6 +210,11 @@ namespace Trackin.Application.Services
                     };
                 }
 
+                if (sensorRFID.Ativo)
+                {
+                    sensorRFID.DesativarSensor();
+                }
+
                 await _sensorRFIDRepository.RemoveAsync(sensorRFID);
                 await _sensorRFIDRepository.SaveChangesAsync();
 
@@ -197,6 +223,14 @@ namespace Trackin.Application.Services
                     Success = true,
                     Message = "Sensor RFID removido com sucesso.",
                     Data = sensorRFID
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Operação inválida: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -209,12 +243,152 @@ namespace Trackin.Application.Services
             }
         }
 
+        public async Task<ServiceResponse<SensorRFID>> AtivarSensorAsync(long id)
+        {
+            try
+            {
+                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                if (sensorRFID == null)
+                {
+                    return new ServiceResponse<SensorRFID>
+                    {
+                        Success = false,
+                        Message = $"Sensor RFID com ID {id} não encontrado."
+                    };
+                }
+
+                sensorRFID.AtivarSensor();
+                await _sensorRFIDRepository.SaveChangesAsync();
+
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = true,
+                    Message = "Sensor RFID ativado com sucesso.",
+                    Data = sensorRFID
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Erro ao ativar sensor RFID: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<SensorRFID>> DesativarSensorAsync(long id)
+        {
+            try
+            {
+                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                if (sensorRFID == null)
+                {
+                    return new ServiceResponse<SensorRFID>
+                    {
+                        Success = false,
+                        Message = $"Sensor RFID com ID {id} não encontrado."
+                    };
+                }
+
+                sensorRFID.DesativarSensor();
+                await _sensorRFIDRepository.SaveChangesAsync();
+
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = true,
+                    Message = "Sensor RFID desativado com sucesso.",
+                    Data = sensorRFID
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<SensorRFID>
+                {
+                    Success = false,
+                    Message = $"Erro ao desativar sensor RFID: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<IEnumerable<SensorRFID>>> GetSensoresComProblemaAsync(TimeSpan tempoLimiteSemLeitura)
+        {
+            try
+            {
+                var sensores = await _sensorRFIDRepository.GetAllAsync();
+                var sensoresComProblema = sensores.Where(s => s.EstaComProblema(tempoLimiteSemLeitura));
+
+                return new ServiceResponse<IEnumerable<SensorRFID>>
+                {
+                    Success = true,
+                    Data = sensoresComProblema
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<IEnumerable<SensorRFID>>
+                {
+                    Success = false,
+                    Message = $"Erro ao obter sensores com problema: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<bool>> VerificarSensorPodeSerUsadoAsync(long id)
+        {
+            try
+            {
+                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                if (sensorRFID == null)
+                {
+                    return new ServiceResponse<bool>
+                    {
+                        Success = false,
+                        Message = $"Sensor RFID com ID {id} não encontrado."
+                    };
+                }
+
+                bool podeSerUsado = sensorRFID.PodeLerRFID();
+
+                return new ServiceResponse<bool>
+                {
+                    Success = true,
+                    Data = podeSerUsado,
+                    Message = podeSerUsado ? "Sensor pode ser usado" : "Sensor não pode ser usado (inativo)"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Erro ao verificar status do sensor: {ex.Message}"
+                };
+            }
+        }
+
         private async Task<bool> SensorRFIDExistsAsync(long id)
         {
             try
             {
-                IEnumerable<SensorRFID> sensores = await _sensorRFIDRepository.GetAllAsync();
-                return sensores.Any(e => e.Id == id);
+                var sensor = await _sensorRFIDRepository.GetByIdAsync(id);
+                return sensor != null;
             }
             catch
             {
@@ -223,4 +397,3 @@ namespace Trackin.Application.Services
         }
     }
 }
-

@@ -3,6 +3,7 @@ using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Interfaces;
+using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Application.Services
 {
@@ -102,17 +103,15 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio patio = new Patio
-                {
-                    Nome = dto.Nome,
-                    Endereco = dto.Endereco,
-                    Cidade = dto.Cidade,
-                    Estado = dto.Estado,
-                    Pais = dto.Pais,
-                    DimensaoX = dto.DimensaoX,
-                    DimensaoY = dto.DimensaoY,
-                    PlantaBaixa = dto.PlantaBaixa,
-                };
+                Patio patio = new Patio(
+                    nome: dto.Nome,
+                    endereco: dto.Endereco,
+                    cidade: dto.Cidade,
+                    estado: dto.Estado,
+                    pais: dto.Pais,
+                    largura: dto.DimensaoX,
+                    comprimento: dto.DimensaoY
+                );
 
                 await _patioRepository.AddAsync(patio);
                 await _patioRepository.SaveChangesAsync();
@@ -122,6 +121,14 @@ namespace Trackin.Application.Services
                     Success = true,
                     Message = "Pátio criado com sucesso.",
                     Data = patio
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return new ServiceResponse<Patio>
+                {
+                    Success = false,
+                    Message = $"Dados inválidos: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -148,6 +155,15 @@ namespace Trackin.Application.Services
                     };
                 }
 
+                if (patio.Cameras.Any() || patio.Zonas.Any() || patio.SensoresRFID.Any())
+                {
+                    return new ServiceResponse<Patio>
+                    {
+                        Success = false,
+                        Message = "Não é possível remover um pátio que possui câmeras, zonas ou sensores associados."
+                    };
+                }
+
                 await _patioRepository.RemoveAsync(patio);
                 await _patioRepository.SaveChangesAsync();
 
@@ -167,6 +183,70 @@ namespace Trackin.Application.Services
                 };
             }
         }
+
+        public async Task<ServiceResponse<double>> GetTaxaOcupacaoAsync(long patioId)
+        {
+            try
+            {
+                var patio = await _patioRepository.GetByIdAsync(patioId);
+                if (patio == null)
+                {
+                    return new ServiceResponse<double>
+                    {
+                        Success = false,
+                        Message = $"Pátio com ID {patioId} não encontrado."
+                    };
+                }
+
+                var taxaOcupacao = patio.CalcularTaxaOcupacao();
+
+                return new ServiceResponse<double>
+                {
+                    Success = true,
+                    Data = taxaOcupacao
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<double>
+                {
+                    Success = false,
+                    Message = $"Erro ao calcular taxa de ocupação: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<bool>> ValidarCoordenadaAsync(long patioId, double x, double y)
+        {
+            try
+            {
+                var patio = await _patioRepository.GetByIdAsync(patioId);
+                if (patio == null)
+                {
+                    return new ServiceResponse<bool>
+                    {
+                        Success = false,
+                        Message = $"Pátio com ID {patioId} não encontrado."
+                    };
+                }
+
+                var coordenada = new Coordenada(x, y);
+                var coordenadaValida = patio.CoordenadaEstaValida(coordenada);
+
+                return new ServiceResponse<bool>
+                {
+                    Success = true,
+                    Data = coordenadaValida
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Erro ao validar coordenada: {ex.Message}"
+                };
+            }
+        }
     }
 }
-

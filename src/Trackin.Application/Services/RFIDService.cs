@@ -6,6 +6,7 @@ using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Enums;
 using Trackin.Domain.Interfaces;
+using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Application.Services
 {
@@ -82,17 +83,14 @@ namespace Trackin.Application.Services
                     FonteDados.RFID
                 );
 
-                LocalizacaoMoto? localizacao = new LocalizacaoMoto
-                {
-                    MotoId = moto.Id,
-                    PatioId = sensor.ZonaPatio.PatioId,
-                    CoordenadaX = coordenadaFinalX,
-                    CoordenadaY = coordenadaFinalY,
-                    Timestamp = DateTime.UtcNow,
-                    Status = status,
-                    FonteDados = FonteDados.RFID,
-                    Confiabilidade = CalcularConfiabilidade(sensor)
-                };
+                LocalizacaoMoto? localizacao = new LocalizacaoMoto(
+                    moto.Id,
+                    sensor.ZonaPatio.PatioId,
+                    new Coordenada(coordenadaFinalX, coordenadaFinalY),
+                    status,
+                    FonteDados.RFID,
+                    CalcularConfiabilidade(sensor)
+                );
 
                 try
                 {
@@ -177,7 +175,7 @@ namespace Trackin.Application.Services
             double offsetX = distancia * Math.Cos(angulo);
             double offsetY = distancia * Math.Sin(angulo);
 
-            return (sensor.PosicaoX + offsetX, sensor.PosicaoY + offsetY);
+            return (sensor.PosicaoSensor.X + offsetX, sensor.PosicaoSensor.Y + offsetY);
         }
 
         private double CalcularConfiabilidade(SensorRFID sensor)

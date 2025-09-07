@@ -1,6 +1,6 @@
 ﻿namespace Trackin.Application.Common
 {
-    public class ServiceResponse<T> where T : class
+    public class ServiceResponse<T>
     {
         public bool Success { get; set; } = true;
         public string Message { get; set; } = string.Empty;

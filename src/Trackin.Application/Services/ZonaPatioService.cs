@@ -1,19 +1,21 @@
-﻿
-using Trackin.Application.Common;
+﻿using Trackin.Application.Common;
 using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Interfaces;
+using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Application.Services
 {
     public class ZonaPatioService : IZonaPatioService
     {
         private readonly IZonaPatioRepository _zonaPatioRepository;
+        private readonly IPatioRepository _patioRepository;
 
-        public ZonaPatioService(IZonaPatioRepository zonaPatioRepository)
+        public ZonaPatioService(IZonaPatioRepository zonaPatioRepository, IPatioRepository patioRepository)
         {
             _zonaPatioRepository = zonaPatioRepository;
+            _patioRepository = patioRepository;
         }
 
         public async Task<ServiceResponsePaginado<ZonaPatio>> GetAllZonasPatiosPaginatedAsync(
@@ -103,26 +105,50 @@ namespace Trackin.Application.Services
         {
             try
             {
-                ZonaPatio zonaPatio = new ZonaPatio
+                var patio = await _patioRepository.GetByIdAsync(dto.PatioId);
+                if (patio == null)
                 {
-                    PatioId = dto.PatioId,
-                    Nome = dto.Nome,
-                    TipoZona = dto.TipoZona,
-                    CoordenadaInicialX = dto.CoordenadaInicialX,
-                    CoordenadaInicialY = dto.CoordenadaInicialY,
-                    CoordenadaFinalX = dto.CoordenadaFinalX,
-                    CoordenadaFinalY = dto.CoordenadaFinalY,
-                    Cor = dto.Cor
-                };
+                    return new ServiceResponse<ZonaPatio>
+                    {
+                        Success = false,
+                        Message = $"Pátio com ID {dto.PatioId} não encontrado."
+                    };
+                }
 
-                await _zonaPatioRepository.AddAsync(zonaPatio);
-                await _zonaPatioRepository.SaveChangesAsync();
+                var pontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
+                var pontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
+
+                var zonaPatio = patio.CriarZona(
+                    nome: dto.Nome,
+                    tipoZona: dto.TipoZona,
+                    pontoInicial: pontoInicial,
+                    pontoFinal: pontoFinal,
+                    cor: dto.Cor
+                );
+
+                await _patioRepository.SaveChangesAsync();
 
                 return new ServiceResponse<ZonaPatio>
                 {
                     Success = true,
                     Message = "Zona de pátio criada com sucesso.",
                     Data = zonaPatio
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return new ServiceResponse<ZonaPatio>
+                {
+                    Success = false,
+                    Message = $"Dados inválidos: {ex.Message}"
+                };
+            }
+            catch (InvalidOperationException ex)
+            {
+                return new ServiceResponse<ZonaPatio>
+                {
+                    Success = false,
+                    Message = $"Operação inválida: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -149,14 +175,34 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                zonaPatio.PatioId = zonaPatioDto.PatioId;
-                zonaPatio.Nome = zonaPatioDto.Nome;
-                zonaPatio.TipoZona = zonaPatioDto.TipoZona;
-                zonaPatio.CoordenadaInicialX = zonaPatioDto.CoordenadaInicialX;
-                zonaPatio.CoordenadaInicialY = zonaPatioDto.CoordenadaInicialY;
-                zonaPatio.CoordenadaFinalX = zonaPatioDto.CoordenadaFinalX;
-                zonaPatio.CoordenadaFinalY = zonaPatioDto.CoordenadaFinalY;
-                zonaPatio.Cor = zonaPatioDto.Cor;
+                if (!string.IsNullOrEmpty(zonaPatioDto.Cor) && zonaPatioDto.Cor != zonaPatio.Cor)
+                {
+                    zonaPatio.AlterarCor(zonaPatioDto.Cor);
+                }
+
+                var novoPontoInicial = new Coordenada(zonaPatioDto.CoordenadaInicialX, zonaPatioDto.CoordenadaInicialY);
+                var novoPontoFinal = new Coordenada(zonaPatioDto.CoordenadaFinalX, zonaPatioDto.CoordenadaFinalY);
+
+               var patio = await _patioRepository.GetByIdAsync(zonaPatio.PatioId);
+                if (patio == null)
+                {
+                    return new ServiceResponse<ZonaPatio>
+                    {
+                        Success = false,
+                        Message = "Pátio associado não encontrado."
+                    };
+                }
+
+                if (!patio.CoordenadaEstaValida(novoPontoInicial) || !patio.CoordenadaEstaValida(novoPontoFinal))
+                {
+                    return new ServiceResponse<ZonaPatio>
+                    {
+                        Success = false,
+                        Message = "As coordenadas especificadas estão fora dos limites do pátio."
+                    };
+                }
+
+                zonaPatio.RedimensionarZona(novoPontoInicial, novoPontoFinal);
 
                 await _zonaPatioRepository.SaveChangesAsync();
 
@@ -165,6 +211,14 @@ namespace Trackin.Application.Services
                     Success = true,
                     Message = "Zona de pátio atualizada com sucesso.",
                     Data = zonaPatio
+                };
+            }
+            catch (ArgumentException ex)
+            {
+                return new ServiceResponse<ZonaPatio>
+                {
+                    Success = false,
+                    Message = $"Dados inválidos: {ex.Message}"
                 };
             }
             catch (Exception ex)
@@ -191,6 +245,15 @@ namespace Trackin.Application.Services
                     };
                 }
 
+                if (zonaPatio.SensoresRFID.Any())
+                {
+                    return new ServiceResponse<ZonaPatio>
+                    {
+                        Success = false,
+                        Message = "Não é possível remover uma zona que possui sensores RFID associados."
+                    };
+                }
+
                 await _zonaPatioRepository.RemoveAsync(zonaPatio);
                 await _zonaPatioRepository.SaveChangesAsync();
 
@@ -211,12 +274,109 @@ namespace Trackin.Application.Services
             }
         }
 
+        public async Task<ServiceResponse<double>> CalcularAreaZonaAsync(long zonaId)
+        {
+            try
+            {
+                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                if (zona == null)
+                {
+                    return new ServiceResponse<double>
+                    {
+                        Success = false,
+                        Message = $"Zona com ID {zonaId} não encontrada."
+                    };
+                }
+
+                var area = zona.CalcularArea();
+
+                return new ServiceResponse<double>
+                {
+                    Success = true,
+                    Data = area
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<double>
+                {
+                    Success = false,
+                    Message = $"Erro ao calcular área da zona: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<Coordenada>> ObterCentroZonaAsync(long zonaId)
+        {
+            try
+            {
+                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                if (zona == null)
+                {
+                    return new ServiceResponse<Coordenada>
+                    {
+                        Success = false,
+                        Message = $"Zona com ID {zonaId} não encontrada."
+                    };
+                }
+
+                var centro = zona.ObterCentroZona();
+
+                return new ServiceResponse<Coordenada>
+                {
+                    Success = true,
+                    Data = centro
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<Coordenada>
+                {
+                    Success = false,
+                    Message = $"Erro ao obter centro da zona: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ServiceResponse<bool>> VerificarPosicaoNaZonaAsync(long zonaId, double x, double y)
+        {
+            try
+            {
+                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                if (zona == null)
+                {
+                    return new ServiceResponse<bool>
+                    {
+                        Success = false,
+                        Message = $"Zona com ID {zonaId} não encontrada."
+                    };
+                }
+
+                var posicao = new Coordenada(x, y);
+                var contemPosicao = zona.ContemPosicao(posicao);
+
+                return new ServiceResponse<bool>
+                {
+                    Success = true,
+                    Data = contemPosicao
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<bool>
+                {
+                    Success = false,
+                    Message = $"Erro ao verificar posição na zona: {ex.Message}"
+                };
+            }
+        }
+
         private async Task<bool> ZonaPatioExistsAsync(long id)
         {
             try
             {
-                IEnumerable<ZonaPatio> zonas = await _zonaPatioRepository.GetAllAsync();
-                return zonas.Any(e => e.Id == id);
+                var zona = await _zonaPatioRepository.GetByIdAsync(id);
+                return zona != null;
             }
             catch
             {
@@ -225,4 +385,3 @@ namespace Trackin.Application.Services
         }
     }
 }
-

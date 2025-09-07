@@ -12,15 +12,27 @@ namespace Trackin.Application.Services
     public class MotoService : IMotoService
     {
         private readonly IMotoRepository _motoRepository;
-        public MotoService(IMotoRepository motoRepository)
+        private readonly IPatioRepository _patioRepository;
+        public MotoService(IMotoRepository motoRepository, IPatioRepository patioRepository)
         {
             _motoRepository = motoRepository;
+            _patioRepository = patioRepository;
         }
 
         public async Task<ServiceResponse<MotoDTO>> CreateMotoAsync(MotoDTO motoDTO)
         {
             try
             {
+                Patio? patioExiste = await _patioRepository.GetByIdAsync(motoDTO.PatioId);
+                if (patioExiste == null)
+                {
+                    return new ServiceResponse<MotoDTO>
+                    {
+                        Success = false,
+                        Message = "Não existe um pátio cadastrado com o ID informado."
+                    };
+                }
+
                 Moto moto = new(motoDTO.PatioId, motoDTO.Placa, motoDTO.Modelo, motoDTO.Ano, motoDTO.RFIDTag);
 
                 await _motoRepository.AddAsync(moto);
