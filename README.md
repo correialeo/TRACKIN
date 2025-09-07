@@ -161,26 +161,31 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
     -   Você deve ver o container `sqlserver-trackin` na lista com status "Up".
 
 6.  **Aplique as Migrations**
-
-    -   Aplique as migrations para criar as tabelas no banco de dados SQL Server:
-
+    
+    -   Entre na pasta raíz src:
         ```bash
-        dotnet ef database update
+        cd src
+        ```
+    -   Aplique as migrations para criar as tabelas no banco de dados SQL Server:
+      
+        ```bash
+        dotnet ef database update --project Trackin.Infrastructure --startup-project Trackin.Api
         ```
 
     -   Se houver erros, verifique se o container está rodando e se as configurações no `.env` estão corretas.
 
-7.  **Execute a Aplicação**
+8.  **Execute a Aplicação**
 
-    -   Inicie o projeto:
+    -   Inicie o projeto: (ainda dentro de src):
 
         ```bash
-        dotnet run
+        dotnet run --project Trackin.Api
         ```
+        - Se preferir, rode com F5 no vscode.
 
     -   A API estará disponível em `https://localhost:5007` (ou a porta configurada).
 
-8.  **Acesse a Documentação Swagger**
+9.  **Acesse a Documentação Swagger**
 
     -   Acesse `https://localhost:5007/swagger` para explorar e testar os endpoints.
 
