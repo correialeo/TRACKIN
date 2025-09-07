@@ -11,8 +11,6 @@ namespace Trackin.Infrastructure.Mappings
             builder.ToTable("SensorRFID");
             builder.HasKey(s => s.Id);
             builder.Property(s => s.Posicao).IsRequired().HasMaxLength(100);
-            builder.Property(s => s.PosicaoX).IsRequired();
-            builder.Property(s => s.PosicaoY).IsRequired();
             builder.Property(s => s.Altura).IsRequired();
             builder.Property(s => s.AnguloVisao).IsRequired();
 
@@ -25,6 +23,17 @@ namespace Trackin.Infrastructure.Mappings
                 .WithMany(z => z.SensoresRFID)
                 .HasForeignKey(s => s.ZonaPatioId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            builder.OwnsOne(c => c.PosicaoSensor, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("PosicaoX")
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("PosicaoY")
+                          .IsRequired();
+            });
         }
     } 
 }

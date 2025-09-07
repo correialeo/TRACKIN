@@ -12,15 +12,33 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(z => z.Id).ValueGeneratedOnAdd();
 
             builder.Property(z => z.Nome).IsRequired().HasMaxLength(50);
-            builder.Property(z => z.CoordenadaInicialX).IsRequired();
-            builder.Property(z => z.CoordenadaInicialY).IsRequired();
-            builder.Property(z => z.CoordenadaFinalX).IsRequired();
-            builder.Property(z => z.CoordenadaFinalY).IsRequired();
             builder.Property(z => z.Cor).IsRequired().HasMaxLength(20);
 
             builder.HasOne(z => z.Patio)
                    .WithMany(p => p.Zonas)
                    .HasForeignKey(z => z.PatioId);
+
+            builder.OwnsOne(c => c.PontoInicial, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("CoordenadaInicialX") // nome da coluna no banco
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("CoordenadaInicialY") // nome da coluna no banco
+                          .IsRequired();
+            });
+
+            builder.OwnsOne(c => c.PontoFinal, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("CoordenadaFinalX") // nome da coluna no banco
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("CoordenadaFinalY") // nome da coluna no banco
+                          .IsRequired();
+            });
         }
     }
 }

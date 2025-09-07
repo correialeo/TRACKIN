@@ -16,13 +16,22 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(p => p.Cidade).IsRequired().HasMaxLength(100);
             builder.Property(p => p.Estado).IsRequired().HasMaxLength(50);
             builder.Property(p => p.Pais).IsRequired().HasMaxLength(50);
-            builder.Property(p => p.DimensaoX).IsRequired();
-            builder.Property(p => p.DimensaoY).IsRequired();
             builder.Property(p => p.PlantaBaixa).HasMaxLength(255);
 
             builder.HasMany(p => p.Zonas) 
                    .WithOne(z => z.Patio)
                    .HasForeignKey(z => z.PatioId);
+
+            builder.OwnsOne(c => c.Dimensoes, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("DimensaoX")
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("DimensaoY")
+                          .IsRequired();
+            });
         }
     }
 }

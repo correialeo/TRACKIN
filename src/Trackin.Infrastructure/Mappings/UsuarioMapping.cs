@@ -13,7 +13,7 @@ namespace Trackin.Infrastructure.Mappings
 
             builder.Property(u => u.Nome).IsRequired().HasMaxLength(100);
             builder.Property(u => u.Email).IsRequired().HasMaxLength(100);
-            builder.Property(u => u.Senha).IsRequired().HasMaxLength(255); 
+            builder.Property(u => u.SenhaHash).IsRequired().HasMaxLength(255).HasColumnName("Senha"); 
             builder.Property(u => u.Role).HasConversion<string>() 
                    .IsRequired()
                    .HasMaxLength(20);

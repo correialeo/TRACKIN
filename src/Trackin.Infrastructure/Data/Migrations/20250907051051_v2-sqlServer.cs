@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Trackin.API.Migrations
+namespace Trackin.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class v1 : Migration
+    public partial class v2sqlServer : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,16 +15,16 @@ namespace Trackin.API.Migrations
                 name: "Patios",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    Nome = table.Column<string>(type: "NVARCHAR2(100)", maxLength: 100, nullable: false),
-                    Endereco = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: false),
-                    Cidade = table.Column<string>(type: "NVARCHAR2(100)", maxLength: 100, nullable: false),
-                    Estado = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    Pais = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    DimensaoX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    DimensaoY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    PlantaBaixa = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Endereco = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Cidade = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Estado = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Pais = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    DimensaoX = table.Column<double>(type: "float", nullable: false),
+                    DimensaoY = table.Column<double>(type: "float", nullable: false),
+                    PlantaBaixa = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -35,17 +35,16 @@ namespace Trackin.API.Migrations
                 name: "Cameras",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Posicao = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    PosicaoX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    PosicaoY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Altura = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    AnguloVisao = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Status = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    URL = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: false),
-                    PatioId1 = table.Column<long>(type: "NUMBER(19)", nullable: true)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    Posicao = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PosicaoX = table.Column<double>(type: "float", nullable: false),
+                    PosicaoY = table.Column<double>(type: "float", nullable: false),
+                    Altura = table.Column<double>(type: "float", nullable: false),
+                    AnguloVisao = table.Column<double>(type: "float", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    URL = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -56,28 +55,23 @@ namespace Trackin.API.Migrations
                         principalTable: "Patios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Cameras_Patios_PatioId1",
-                        column: x => x.PatioId1,
-                        principalTable: "Patios",
-                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
                 name: "Motos",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Placa = table.Column<string>(type: "NVARCHAR2(10)", maxLength: 10, nullable: false),
-                    Modelo = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    Ano = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    Status = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    RFIDTag = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    UltimaManutencao = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: true),
-                    ImagemReferencia = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: true),
-                    CaracteristicasVisuais = table.Column<string>(type: "CLOB", nullable: true)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    Placa = table.Column<string>(type: "nvarchar(10)", maxLength: 10, nullable: false),
+                    Modelo = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Ano = table.Column<int>(type: "int", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    RFIDTag = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    UltimaManutencao = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ImagemReferencia = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    CaracteristicasVisuais = table.Column<string>(type: "NVARCHAR(MAX)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -94,13 +88,16 @@ namespace Trackin.API.Migrations
                 name: "Usuarios",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    Nome = table.Column<string>(type: "NVARCHAR2(100)", maxLength: 100, nullable: false),
-                    Email = table.Column<string>(type: "NVARCHAR2(100)", maxLength: 100, nullable: false),
-                    Senha = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: false),
-                    Role = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Nome = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Senha = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    Ativo = table.Column<bool>(type: "bit", nullable: false),
+                    DataCriacao = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UltimoLogin = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -117,16 +114,16 @@ namespace Trackin.API.Migrations
                 name: "ZonasPatio",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Nome = table.Column<string>(type: "NVARCHAR2(50)", maxLength: 50, nullable: false),
-                    TipoZona = table.Column<int>(type: "NUMBER(10)", nullable: false),
-                    CoordenadaInicialX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaInicialY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaFinalX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaFinalY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Cor = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    Nome = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    TipoZona = table.Column<int>(type: "int", nullable: false),
+                    CoordenadaInicialX = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaInicialY = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaFinalX = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaFinalY = table.Column<double>(type: "float", nullable: false),
+                    Cor = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -143,17 +140,17 @@ namespace Trackin.API.Migrations
                 name: "DeteccoesVisuais",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    MotoId = table.Column<long>(type: "NUMBER(19)", nullable: true),
-                    CameraId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
-                    CoordenadaXImagem = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaYImagem = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaXPatio = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaYPatio = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Confianca = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    ImagemCaptura = table.Column<string>(type: "NVARCHAR2(255)", maxLength: 255, nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MotoId = table.Column<long>(type: "bigint", nullable: true),
+                    CameraId = table.Column<long>(type: "bigint", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CoordenadaXImagem = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaYImagem = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaXPatio = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaYPatio = table.Column<double>(type: "float", nullable: false),
+                    Confianca = table.Column<double>(type: "float", nullable: false),
+                    ImagemCaptura = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -175,16 +172,16 @@ namespace Trackin.API.Migrations
                 name: "Localizacoes",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    MotoId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    CoordenadaX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    CoordenadaY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
-                    Status = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    FonteDados = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    Confiabilidade = table.Column<double>(type: "BINARY_DOUBLE", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MotoId = table.Column<long>(type: "bigint", nullable: false),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    CoordenadaX = table.Column<double>(type: "float", nullable: false),
+                    CoordenadaY = table.Column<double>(type: "float", nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    FonteDados = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Confiabilidade = table.Column<double>(type: "float", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -200,22 +197,24 @@ namespace Trackin.API.Migrations
                         column: x => x.PatioId,
                         principalTable: "Patios",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
                 name: "SensorRFID",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    ZonaPatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    PatioId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Posicao = table.Column<string>(type: "NVARCHAR2(100)", maxLength: 100, nullable: false),
-                    PosicaoX = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    PosicaoY = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    Altura = table.Column<double>(type: "BINARY_DOUBLE", nullable: false),
-                    AnguloVisao = table.Column<double>(type: "BINARY_DOUBLE", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ZonaPatioId = table.Column<long>(type: "bigint", nullable: false),
+                    PatioId = table.Column<long>(type: "bigint", nullable: false),
+                    Posicao = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PosicaoX = table.Column<double>(type: "float", nullable: false),
+                    PosicaoY = table.Column<double>(type: "float", nullable: false),
+                    Altura = table.Column<double>(type: "float", nullable: false),
+                    AnguloVisao = table.Column<double>(type: "float", nullable: false),
+                    Ativo = table.Column<bool>(type: "bit", nullable: false),
+                    UltimaLeitura = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -238,16 +237,16 @@ namespace Trackin.API.Migrations
                 name: "Eventos",
                 columns: table => new
                 {
-                    Id = table.Column<long>(type: "NUMBER(19)", nullable: false)
-                        .Annotation("Oracle:Identity", "START WITH 1 INCREMENT BY 1"),
-                    MotoId = table.Column<long>(type: "NUMBER(19)", nullable: false),
-                    Tipo = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "TIMESTAMP(7)", nullable: false),
-                    UsuarioId = table.Column<long>(type: "NUMBER(19)", nullable: true),
-                    SensorId = table.Column<long>(type: "NUMBER(19)", nullable: true),
-                    CameraId = table.Column<long>(type: "NUMBER(19)", nullable: true),
-                    Observacao = table.Column<string>(type: "NVARCHAR2(500)", maxLength: 500, nullable: true),
-                    FonteEvento = table.Column<string>(type: "NVARCHAR2(20)", maxLength: 20, nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    MotoId = table.Column<long>(type: "bigint", nullable: false),
+                    Tipo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    Timestamp = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UsuarioId = table.Column<long>(type: "bigint", nullable: true),
+                    SensorId = table.Column<long>(type: "bigint", nullable: true),
+                    CameraId = table.Column<long>(type: "bigint", nullable: true),
+                    Observacao = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FonteEvento = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -282,11 +281,6 @@ namespace Trackin.API.Migrations
                 name: "IX_Cameras_PatioId",
                 table: "Cameras",
                 column: "PatioId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Cameras_PatioId1",
-                table: "Cameras",
-                column: "PatioId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DeteccoesVisuais_CameraId",

@@ -30,7 +30,7 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(m => m.RFIDTag).IsRequired().HasMaxLength(50);
             builder.Property(m => m.UltimaManutencao).IsRequired(false); 
             builder.Property(m => m.ImagemReferencia).HasMaxLength(255).IsRequired(false);
-            builder.Property(m => m.CaracteristicasVisuais).HasColumnType("CLOB").IsRequired(false);
+            builder.Property(m => m.CaracteristicasVisuais).HasColumnType("NVARCHAR(MAX)").IsRequired(false);
 
             builder.HasOne(m => m.Patio)
                 .WithMany()

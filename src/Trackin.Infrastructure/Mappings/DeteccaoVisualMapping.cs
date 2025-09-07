@@ -10,11 +10,6 @@ namespace Trackin.Infrastructure.Mappings
         {
             builder.HasKey(d => d.Id);
             builder.Property(d => d.Id).ValueGeneratedOnAdd();
-
-            builder.Property(d => d.CoordenadaXImagem).IsRequired();
-            builder.Property(d => d.CoordenadaYImagem).IsRequired();
-            builder.Property(d => d.CoordenadaXPatio).IsRequired();
-            builder.Property(d => d.CoordenadaYPatio).IsRequired();
             builder.Property(d => d.Confianca).IsRequired();
             builder.Property(d => d.ImagemCaptura).HasMaxLength(255);
 
@@ -26,6 +21,28 @@ namespace Trackin.Infrastructure.Mappings
             builder.HasOne(d => d.Camera) 
                    .WithMany(c => c.DeteccoesVisuais)
                    .HasForeignKey(d => d.CameraId);
+
+            builder.OwnsOne(c => c.PosicaoPatio, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("CoordenadaXPatio")
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("CoordenadaYPatio")
+                          .IsRequired();
+            });
+
+            builder.OwnsOne(c => c.PosicaoImagem, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("CoordenadaXImagem")
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("CoordenadaYImagem")
+                          .IsRequired();
+            });
         }
     }
 }

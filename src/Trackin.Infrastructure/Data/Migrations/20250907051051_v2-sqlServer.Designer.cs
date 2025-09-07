@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Trackin.Infrastructure.Context;
 
@@ -11,9 +12,11 @@ using Trackin.Infrastructure.Context;
 namespace Trackin.Infrastructure.Migrations
 {
     [DbContext(typeof(TrackinContext))]
-    partial class TrackinContextModelSnapshot : ModelSnapshot
+    [Migration("20250907051051_v2-sqlServer")]
+    partial class v2sqlServer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

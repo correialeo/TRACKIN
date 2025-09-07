@@ -10,9 +10,6 @@ namespace Trackin.Infrastructure.Mappings
         {
             builder.HasKey(l => l.Id);
             builder.Property(l => l.Id).ValueGeneratedOnAdd();
-
-            builder.Property(l => l.CoordenadaX).IsRequired();
-            builder.Property(l => l.CoordenadaY).IsRequired();
             builder.Property(l => l.Timestamp).IsRequired();
             builder.Property(l => l.Status).HasConversion<string>() 
                    .IsRequired()
@@ -28,7 +25,19 @@ namespace Trackin.Infrastructure.Mappings
 
             builder.HasOne(l => l.Patio) 
                    .WithMany(p => p.Localizacoes)
-                   .HasForeignKey(l => l.PatioId);
+                   .HasForeignKey(l => l.PatioId)
+                   .OnDelete(DeleteBehavior.Restrict); ;
+
+            builder.OwnsOne(c => c.Posicao, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("CoordenadaX")
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("CoordenadaY")
+                          .IsRequired();
+            });
         }
     }
 }

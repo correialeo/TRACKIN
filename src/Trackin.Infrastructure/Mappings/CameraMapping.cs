@@ -12,8 +12,6 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(c => c.Id).ValueGeneratedOnAdd();
 
             builder.Property(c => c.Posicao).IsRequired().HasMaxLength(50);
-            builder.Property(c => c.PosicaoX).IsRequired();
-            builder.Property(c => c.PosicaoY).IsRequired();
             builder.Property(c => c.Altura).IsRequired();
             builder.Property(c => c.AnguloVisao).IsRequired();
             builder.Property(c => c.Status).HasConversion<string>() 
@@ -22,8 +20,21 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(c => c.URL).HasMaxLength(255);
 
             builder.HasOne(c => c.Patio) 
-                   .WithMany(p => p.Camera)
+                   .WithMany(p => p.Cameras)
                    .HasForeignKey(c => c.PatioId);
+
+            builder.OwnsOne(c => c.PosicaoPatio, coordenada =>
+            {
+                coordenada.Property(p => p.X)
+                          .HasColumnName("PosicaoX")
+
+                          .IsRequired();
+
+                coordenada.Property(p => p.Y)
+                          .HasColumnName("PosicaoY")
+
+                          .IsRequired();
+            });
         }
     }
 }
