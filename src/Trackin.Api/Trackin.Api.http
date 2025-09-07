@@ -1,0 +1,6 @@
+@Trackin.Api_HostAddress = http://localhost:5293
+
+GET {{Trackin.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

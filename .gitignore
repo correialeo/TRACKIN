@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 /Trackin.API/appsettings.Development.json
 /Trackin.API/.env
+/src/Trackin.Api/.env
