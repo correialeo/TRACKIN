@@ -24,8 +24,8 @@ namespace Trackin.Domain.ValueObjects
             if (outraCoordenada == null)
                 throw new ArgumentNullException(nameof(outraCoordenada));
 
-            var deltaX = X - outraCoordenada.X;
-            var deltaY = Y - outraCoordenada.Y;
+            double deltaX = X - outraCoordenada.X;
+            double deltaY = Y - outraCoordenada.Y;
 
             return Math.Sqrt(deltaX * deltaX + deltaY * deltaY);
         }
@@ -43,10 +43,10 @@ namespace Trackin.Domain.ValueObjects
             if (pontoInicial == null || pontoFinal == null)
                 return false;
 
-            var minX = Math.Min(pontoInicial.X, pontoFinal.X);
-            var maxX = Math.Max(pontoInicial.X, pontoFinal.X);
-            var minY = Math.Min(pontoInicial.Y, pontoFinal.Y);
-            var maxY = Math.Max(pontoInicial.Y, pontoFinal.Y);
+            double minX = Math.Min(pontoInicial.X, pontoFinal.X);
+            double maxX = Math.Max(pontoInicial.X, pontoFinal.X);
+            double minY = Math.Min(pontoInicial.Y, pontoFinal.Y);
+            double maxY = Math.Max(pontoInicial.Y, pontoFinal.Y);
 
             return X >= minX && X <= maxX && Y >= minY && Y <= maxY;
         }

@@ -128,32 +128,32 @@ namespace Trackin.Domain.Entity
 
         public IEnumerable<EventoMoto> ObterEventosRecentes(TimeSpan periodo)
         {
-            var dataLimite = DateTime.UtcNow - periodo;
+            DateTime dataLimite = DateTime.UtcNow - periodo;
             return _eventos.Where(e => e.Timestamp >= dataLimite);
         }
 
         private string GerarHashSenha(string senha)
         {
-            using var sha256 = SHA256.Create();
-            var salt = Guid.NewGuid().ToString();
-            var senhaComSalt = senha + salt;
-            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senhaComSalt));
-            var hash = Convert.ToBase64String(hashBytes);
+            using SHA256 sha256 = SHA256.Create();
+            string salt = Guid.NewGuid().ToString();
+            string senhaComSalt = senha + salt;
+            byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senhaComSalt));
+            string hash = Convert.ToBase64String(hashBytes);
             return $"{salt}:{hash}";
         }
 
         private bool VerificarHashSenha(string senha, string senhaHash)
         {
-            var partes = senhaHash.Split(':');
+            string[] partes = senhaHash.Split(':');
             if (partes.Length != 2) return false;
 
-            var salt = partes[0];
-            var hash = partes[1];
+            string salt = partes[0];
+            string hash = partes[1];
 
-            using var sha256 = SHA256.Create();
-            var senhaComSalt = senha + salt;
-            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senhaComSalt));
-            var hashCalculado = Convert.ToBase64String(hashBytes);
+            using SHA256 sha256 = SHA256.Create();
+            string senhaComSalt = senha + salt;
+            byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senhaComSalt));
+            string hashCalculado = Convert.ToBase64String(hashBytes);
 
             return hash == hashCalculado;
         }

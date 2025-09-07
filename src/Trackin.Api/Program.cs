@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 DotEnv.Load();
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
@@ -29,8 +29,8 @@ builder.Services.AddSwaggerGen(x =>
     });
 
 
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     x.IncludeXmlComments(xmlPath);
 });
 
@@ -57,7 +57,7 @@ builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository
 builder.Services.AddScoped<IPatioRepository, PatioRepository>();
 builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

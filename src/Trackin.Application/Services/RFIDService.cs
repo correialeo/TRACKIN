@@ -69,9 +69,9 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var (coordenadaFinalX, coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
-                var tipoEvento = DeterminarTipoEvento(sensor.ZonaPatio.TipoZona);
-                var status = DeterminarStatusMoto(tipoEvento);
+                (double coordenadaFinalX, double coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
+                EventoMotoTipo tipoEvento = DeterminarTipoEvento(sensor.ZonaPatio.TipoZona);
+                MotoStatus status = DeterminarStatusMoto(tipoEvento);
 
                 EventoMoto? evento = new EventoMoto(
                     moto.Id,

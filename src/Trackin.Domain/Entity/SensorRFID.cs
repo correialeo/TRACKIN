@@ -109,7 +109,7 @@ namespace Trackin.Domain.Entity
 
         public IEnumerable<EventoMoto> ObterEventosRecentes(TimeSpan periodo)
         {
-            var dataLimite = DateTime.UtcNow - periodo;
+            DateTime dataLimite = DateTime.UtcNow - periodo;
             return _eventos.Where(e => e.Timestamp >= dataLimite);
         }
 

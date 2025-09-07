@@ -42,15 +42,15 @@ namespace Trackin.Domain.Entity
 
         public double CalcularArea()
         {
-            var largura = Math.Abs(PontoFinal.X - PontoInicial.X);
-            var altura = Math.Abs(PontoFinal.Y - PontoInicial.Y);
+            double largura = Math.Abs(PontoFinal.X - PontoInicial.X);
+            double altura = Math.Abs(PontoFinal.Y - PontoInicial.Y);
             return largura * altura;
         }
 
         public Coordenada ObterCentroZona()
         {
-            var centroX = (PontoInicial.X + PontoFinal.X) / 2;
-            var centroY = (PontoInicial.Y + PontoFinal.Y) / 2;
+            double centroX = (PontoInicial.X + PontoFinal.X) / 2;
+            double centroY = (PontoInicial.Y + PontoFinal.Y) / 2;
             return new Coordenada(centroX, centroY);
         }
 
@@ -59,15 +59,15 @@ namespace Trackin.Domain.Entity
             if (outroPontoInicial == null || outroPontoFinal == null)
                 return false;
 
-            var minX1 = Math.Min(PontoInicial.X, PontoFinal.X);
-            var maxX1 = Math.Max(PontoInicial.X, PontoFinal.X);
-            var minY1 = Math.Min(PontoInicial.Y, PontoFinal.Y);
-            var maxY1 = Math.Max(PontoInicial.Y, PontoFinal.Y);
+            double minX1 = Math.Min(PontoInicial.X, PontoFinal.X);
+            double maxX1 = Math.Max(PontoInicial.X, PontoFinal.X);
+            double minY1 = Math.Min(PontoInicial.Y, PontoFinal.Y);
+            double maxY1 = Math.Max(PontoInicial.Y, PontoFinal.Y);
 
-            var minX2 = Math.Min(outroPontoInicial.X, outroPontoFinal.X);
-            var maxX2 = Math.Max(outroPontoInicial.X, outroPontoFinal.X);
-            var minY2 = Math.Min(outroPontoInicial.Y, outroPontoFinal.Y);
-            var maxY2 = Math.Max(outroPontoInicial.Y, outroPontoFinal.Y);
+            double minX2 = Math.Min(outroPontoInicial.X, outroPontoFinal.X);
+            double maxX2 = Math.Max(outroPontoInicial.X, outroPontoFinal.X);
+            double minY2 = Math.Min(outroPontoInicial.Y, outroPontoFinal.Y);
+            double maxY2 = Math.Max(outroPontoInicial.Y, outroPontoFinal.Y);
 
             return !(maxX1 < minX2 || maxX2 < minX1 || maxY1 < minY2 || maxY2 < minY1);
         }

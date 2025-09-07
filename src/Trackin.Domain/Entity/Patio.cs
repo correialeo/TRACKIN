@@ -44,7 +44,7 @@ namespace Trackin.Domain.Entity
         {
             ValidarCoordenadaDentroDoPatio(posicaoPatio);
 
-            var camera = new Camera(Id, posicao, posicaoPatio, altura, anguloVisao, url);
+            Camera camera = new Camera(Id, posicao, posicaoPatio, altura, anguloVisao, url);
             _cameras.Add(camera);
 
             return camera;
@@ -56,7 +56,7 @@ namespace Trackin.Domain.Entity
             ValidarCoordenadaDentroDoPatio(pontoFinal);
             ValidarSobreposicaoZonas(pontoInicial, pontoFinal);
 
-            var zona = new ZonaPatio(Id, nome, tipoZona, pontoInicial, pontoFinal, cor);
+            ZonaPatio zona = new ZonaPatio(Id, nome, tipoZona, pontoInicial, pontoFinal, cor);
             _zonas.Add(zona);
 
             return zona;
@@ -66,11 +66,11 @@ namespace Trackin.Domain.Entity
         {
             ValidarCoordenadaDentroDoPatio(posicaoSensor);
 
-            var zona = _zonas.FirstOrDefault(z => z.Id == zonaId);
+            ZonaPatio? zona = _zonas.FirstOrDefault(z => z.Id == zonaId);
             if (zona == null)
                 throw new ArgumentException("Zona não encontrada neste pátio");
 
-            var sensor = new SensorRFID(zonaId, Id, posicao, posicaoSensor, altura, anguloVisao);
+            SensorRFID sensor = new SensorRFID(zonaId, Id, posicao, posicaoSensor, altura, anguloVisao);
             _sensoresRFID.Add(sensor);
 
             return sensor;
@@ -116,10 +116,10 @@ namespace Trackin.Domain.Entity
 
         public double CalcularTaxaOcupacao()
         {
-            var totalZonasEstacionamento = _zonas.Count(z => z.TipoZona == TipoZona.ZONA_DE_ESTACIONAMENTO);
+            int totalZonasEstacionamento = _zonas.Count(z => z.TipoZona == TipoZona.ZONA_DE_ESTACIONAMENTO);
             if (totalZonasEstacionamento == 0) return 0;
 
-            var motosEstacionadas = ObterTotalMotosDisponiveis();
+            int motosEstacionadas = ObterTotalMotosDisponiveis();
             return (double)motosEstacionadas / totalZonasEstacionamento;
         }
 
@@ -143,7 +143,7 @@ namespace Trackin.Domain.Entity
 
         private void ValidarSobreposicaoZonas(Coordenada pontoInicial, Coordenada pontoFinal)
         {
-            foreach (var zona in _zonas)
+            foreach (ZonaPatio zona in _zonas)
             {
                 if (zona.TemSobreposicaoCom(pontoInicial, pontoFinal))
                     throw new InvalidOperationException($"Nova zona se sobrepõe com a zona '{zona.Nome}'");

@@ -188,7 +188,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var patio = await _patioRepository.GetByIdAsync(patioId);
+                Patio patio = await _patioRepository.GetByIdAsync(patioId);
                 if (patio == null)
                 {
                     return new ServiceResponse<double>
@@ -198,7 +198,7 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var taxaOcupacao = patio.CalcularTaxaOcupacao();
+                double taxaOcupacao = patio.CalcularTaxaOcupacao();
 
                 return new ServiceResponse<double>
                 {
@@ -220,7 +220,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var patio = await _patioRepository.GetByIdAsync(patioId);
+                Patio patio = await _patioRepository.GetByIdAsync(patioId);
                 if (patio == null)
                 {
                     return new ServiceResponse<bool>
@@ -230,8 +230,8 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var coordenada = new Coordenada(x, y);
-                var coordenadaValida = patio.CoordenadaEstaValida(coordenada);
+                Coordenada coordenada = new Coordenada(x, y);
+                bool coordenadaValida = patio.CoordenadaEstaValida(coordenada);
 
                 return new ServiceResponse<bool>
                 {

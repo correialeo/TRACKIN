@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Reflection;
 using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
 
@@ -36,7 +37,7 @@ namespace Trackin.Infrastructure.Persistence.Repositories
                 MemberExpression property = Expression.Property(parameter, ordering);
                 LambdaExpression lambda = Expression.Lambda(property, parameter);
                 string methodName = descendingOrder ? "OrderByDescending" : "OrderBy";
-                var method = typeof(Queryable).GetMethods()
+                MethodInfo method = typeof(Queryable).GetMethods()
                     .First(m => m.Name == methodName && m.GetParameters().Length == 2)
                     .MakeGenericMethod(typeof(T), property.Type);
                 query = (IQueryable<T>)method.Invoke(null, new object[] { query, lambda });

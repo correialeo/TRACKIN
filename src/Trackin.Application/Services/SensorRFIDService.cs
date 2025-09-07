@@ -103,9 +103,9 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var coordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
+                Coordenada coordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
 
-                var sensor = new SensorRFID(
+                SensorRFID sensor = new SensorRFID(
                     sensorRFIDDTO.ZonaPatioId,
                     sensorRFIDDTO.PatioId,
                     sensorRFIDDTO.Posicao,
@@ -156,7 +156,7 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var novaCoordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
+                Coordenada novaCoordenada = new Coordenada(sensorRFIDDTO.PosicaoX, sensorRFIDDTO.PosicaoY);
                 sensorRFID.AtualizarPosicao(novaCoordenada, sensorRFIDDTO.Altura);
 
                 // criar metodos na entidade para atualizar outros campos 
@@ -247,7 +247,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                SensorRFID sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
                 if (sensorRFID == null)
                 {
                     return new ServiceResponse<SensorRFID>
@@ -289,7 +289,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                SensorRFID sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
                 if (sensorRFID == null)
                 {
                     return new ServiceResponse<SensorRFID>
@@ -331,8 +331,8 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var sensores = await _sensorRFIDRepository.GetAllAsync();
-                var sensoresComProblema = sensores.Where(s => s.EstaComProblema(tempoLimiteSemLeitura));
+                IEnumerable<SensorRFID> sensores = await _sensorRFIDRepository.GetAllAsync();
+                IEnumerable<SensorRFID> sensoresComProblema = sensores.Where(s => s.EstaComProblema(tempoLimiteSemLeitura));
 
                 return new ServiceResponse<IEnumerable<SensorRFID>>
                 {
@@ -354,7 +354,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
+                SensorRFID sensorRFID = await _sensorRFIDRepository.GetByIdAsync(id);
                 if (sensorRFID == null)
                 {
                     return new ServiceResponse<bool>
@@ -387,7 +387,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var sensor = await _sensorRFIDRepository.GetByIdAsync(id);
+                SensorRFID sensor = await _sensorRFIDRepository.GetByIdAsync(id);
                 return sensor != null;
             }
             catch

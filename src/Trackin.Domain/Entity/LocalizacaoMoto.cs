@@ -68,8 +68,8 @@ namespace Trackin.Domain.Entity
             if (zona == null)
                 return false;
 
-            var pontoInicial = zona.PontoInicial;
-            var pontoFinal = zona.PontoFinal;
+            Coordenada pontoInicial = zona.PontoInicial;
+            Coordenada pontoFinal = zona.PontoFinal;
 
             return Posicao.EstaDentroDoRetangulo(pontoInicial, pontoFinal);
         }

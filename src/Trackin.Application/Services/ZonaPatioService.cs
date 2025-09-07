@@ -105,7 +105,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var patio = await _patioRepository.GetByIdAsync(dto.PatioId);
+                Patio patio = await _patioRepository.GetByIdAsync(dto.PatioId);
                 if (patio == null)
                 {
                     return new ServiceResponse<ZonaPatio>
@@ -115,10 +115,10 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var pontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
-                var pontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
+                Coordenada pontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
+                Coordenada pontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
 
-                var zonaPatio = patio.CriarZona(
+                ZonaPatio zonaPatio = patio.CriarZona(
                     nome: dto.Nome,
                     tipoZona: dto.TipoZona,
                     pontoInicial: pontoInicial,
@@ -180,10 +180,10 @@ namespace Trackin.Application.Services
                     zonaPatio.AlterarCor(zonaPatioDto.Cor);
                 }
 
-                var novoPontoInicial = new Coordenada(zonaPatioDto.CoordenadaInicialX, zonaPatioDto.CoordenadaInicialY);
-                var novoPontoFinal = new Coordenada(zonaPatioDto.CoordenadaFinalX, zonaPatioDto.CoordenadaFinalY);
+                Coordenada novoPontoInicial = new Coordenada(zonaPatioDto.CoordenadaInicialX, zonaPatioDto.CoordenadaInicialY);
+                Coordenada novoPontoFinal = new Coordenada(zonaPatioDto.CoordenadaFinalX, zonaPatioDto.CoordenadaFinalY);
 
-               var patio = await _patioRepository.GetByIdAsync(zonaPatio.PatioId);
+                Patio patio = await _patioRepository.GetByIdAsync(zonaPatio.PatioId);
                 if (patio == null)
                 {
                     return new ServiceResponse<ZonaPatio>
@@ -278,7 +278,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
                 if (zona == null)
                 {
                     return new ServiceResponse<double>
@@ -288,7 +288,7 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var area = zona.CalcularArea();
+                double area = zona.CalcularArea();
 
                 return new ServiceResponse<double>
                 {
@@ -310,7 +310,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
                 if (zona == null)
                 {
                     return new ServiceResponse<Coordenada>
@@ -320,7 +320,7 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var centro = zona.ObterCentroZona();
+                Coordenada centro = zona.ObterCentroZona();
 
                 return new ServiceResponse<Coordenada>
                 {
@@ -342,7 +342,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
+                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
                 if (zona == null)
                 {
                     return new ServiceResponse<bool>
@@ -352,8 +352,8 @@ namespace Trackin.Application.Services
                     };
                 }
 
-                var posicao = new Coordenada(x, y);
-                var contemPosicao = zona.ContemPosicao(posicao);
+                Coordenada posicao = new Coordenada(x, y);
+                bool contemPosicao = zona.ContemPosicao(posicao);
 
                 return new ServiceResponse<bool>
                 {
@@ -375,7 +375,7 @@ namespace Trackin.Application.Services
         {
             try
             {
-                var zona = await _zonaPatioRepository.GetByIdAsync(id);
+                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(id);
                 return zona != null;
             }
             catch
