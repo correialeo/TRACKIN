@@ -13,25 +13,30 @@ namespace Trackin.Application.Services
     {
         private readonly IMotoRepository _motoRepository;
         private readonly IPatioRepository _patioRepository;
+        
+        private const string PatioNaoExiste = "Não existe umpátio cadastrado com id informado";
         public MotoService(IMotoRepository motoRepository, IPatioRepository patioRepository)
         {
             _motoRepository = motoRepository;
             _patioRepository = patioRepository;
         }
+        
+        private async Task<Moto?> ObterMoto(long id) => await _motoRepository.GetByIdAsync(id);
+
+        private async Task<Patio?> ObterPatio(long id) => await _patioRepository.GetByIdAsync(id);
+
+        private ServiceResponse<T> Sucesso<T>(T data, string message = "") => new() { Success = true, Data = data, Message = message };
+
+        private ServiceResponse<T> Erro<T>(string message) => new() { Success = false, Message = message };
+
 
         public async Task<ServiceResponse<MotoDTO>> CreateMotoAsync(MotoDTO motoDTO)
         {
             try
             {
-                Patio? patioExiste = await _patioRepository.GetByIdAsync(motoDTO.PatioId);
-                if (patioExiste == null)
-                {
-                    return new ServiceResponse<MotoDTO>
-                    {
-                        Success = false,
-                        Message = "Não existe um pátio cadastrado com o ID informado."
-                    };
-                }
+                var patio = await ObterPatio(motoDTO.PatioId);
+                if(patio == null)
+                    return Erro<MotoDTO>(PatioNaoExiste);
 
                 Moto moto = new(motoDTO.PatioId, motoDTO.Placa, motoDTO.Modelo, motoDTO.Ano, motoDTO.RFIDTag);
 
@@ -39,20 +44,11 @@ namespace Trackin.Application.Services
                 await _motoRepository.SaveChangesAsync();
 
                 motoDTO.Id = moto.Id;
-                return new ServiceResponse<MotoDTO>
-                {
-                    Success = true,
-                    Message = "Moto cadastrada com sucesso.",
-                    Data = motoDTO
-                };
+                return Sucesso(motoDTO, "moto cadastrada com sucesso");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<MotoDTO>
-                {
-                    Success = false,
-                    Message = $"Erro ao cadastrar moto: {ex.Message}"
-                };
+                return Erro<MotoDTO>($"Erro ao cadastrar moto: {ex.Message}");
             }
         }
 
@@ -60,28 +56,14 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Moto? moto = await _motoRepository.GetByIdAsync(id);
+                var moto = await ObterMoto(id);
                 if (moto == null)
-                {
-                    return new ServiceResponse<Moto>
-                    {
-                        Success = false,
-                        Message = "Moto não encontrada."
-                    };
-                }
-                return new ServiceResponse<Moto>
-                {
-                    Success = true,
-                    Data = moto
-                };
+                    return Erro<Moto>("Moto não encontrada");
+                return Sucesso(moto);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Moto>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter moto: {ex.Message}"
-                };
+                return Erro<Moto>($"Erro ao obter moto: {ex.Message}");
             }
         }
 
@@ -89,20 +71,12 @@ namespace Trackin.Application.Services
         {
             try
             {
-                IEnumerable<Moto> motos = await _motoRepository.GetAllAsync();
-                return new ServiceResponse<IEnumerable<Moto>>
-                {
-                    Success = true,
-                    Data = motos
-                };
+               var motos = await _motoRepository.GetAllAsync();
+                return Sucesso(motos);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<IEnumerable<Moto>>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter motos: {ex.Message}"
-                };
+                return Erro<IEnumerable<Moto>>($"Erro ao obter motos: {ex.Message}");
             }
         }
 
@@ -210,32 +184,18 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Moto? moto = await _motoRepository.GetByIdAsync(id);
-                if (moto == null)
-                {
-                    return new ServiceResponse<Moto>
-                    {
-                        Success = false,
-                        Message = "Moto não encontrada."
-                    };
-                }
+               var moto = await ObterMoto(id);
+               if (moto == null)
+                   return Erro<Moto>("moto não encontrada");
 
                 await _motoRepository.UpdateMotoAsync(moto);
-
                 await _motoRepository.SaveChangesAsync();
-                return new ServiceResponse<Moto>
-                {
-                    Success = true,
-                    Data = moto
-                };
+                
+                return Sucesso(moto);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Moto>
-                {
-                    Success = false,
-                    Message = $"Erro ao atualizar moto: {ex.Message}"
-                };
+               return Erro<Moto>($"Erro ao atualizar moto: {ex.Message}");
             }
         }
 
@@ -243,30 +203,18 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Moto? moto = await _motoRepository.GetByIdAsync(id);
+                var moto = await ObterMoto(id);
                 if (moto == null)
-                {
-                    return new ServiceResponse<Moto>
-                    {
-                        Success = false,
-                        Message = "Moto não encontrada."
-                    };
-                }
+                    return Erro<Moto>("moto não encontrada");
+
                 await _motoRepository.RemoveAsync(moto);
                 await _motoRepository.SaveChangesAsync();
-                return new ServiceResponse<Moto>
-                {
-                    Success = true,
-                    Data = moto
-                };
+
+                return Sucesso(moto);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Moto>
-                {
-                    Success = false,
-                    Message = $"Erro ao excluir moto: {ex.Message}"
-                };
+               return Erro<Moto>($"Erro ao deletar moto: {ex.Message}");
             }
         }
 
@@ -274,34 +222,21 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Moto? moto = await _motoRepository.GetByIdAsync(id);
+                var moto = await ObterMoto(id);
                 if (moto == null)
-                {
-                    return new ServiceResponse<Moto>
-                    {
-                        Success = false,
-                        Message = "Moto não encontrada."
-                    };
-                }
+                    return Erro<Moto>("moto não encontrada");
 
                 moto.AtualizarImagemReferencia(imagemReferencia);
 
                 await _motoRepository.UpdateAsync(moto);
                 await _motoRepository.SaveChangesAsync();
 
-                return new ServiceResponse<Moto>
-                {
-                    Success = true,
-                    Data = moto
-                };
+                return Sucesso(moto);
             }
             catch (Exception ex)
-            {
-                return new ServiceResponse<Moto>
-                {
-                    Success = false,
-                    Message = $"Erro ao cadastrar imagem de referência: {ex.Message}"
-                };
+            { 
+                return Erro<Moto>($"Erro ao cadastrar imagem de referencia: {ex.Message}");
+                
             }
         }
     }
