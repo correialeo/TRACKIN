@@ -8,7 +8,7 @@ namespace Trackin.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class RFIDController : ControllerBase
+    public class RFIDController : BaseController
     {
         private readonly IRFIDService _service;
         public RFIDController(IRFIDService service)
@@ -30,24 +30,9 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(typeof(string), StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ProcessarLeituraRFID([FromBody] RFIDLeituraDTO leitura)
         {
-            if (!ModelState.IsValid)
-            {
-                return ValidationProblem(ModelState); 
-            }
 
             ServiceResponse<LocalizacaoMotoDTO> response = await _service.ProcessarLeituraRFID(leitura);
-
-            if (response.Message.Contains("não encontrada") || response.Message.Contains("não encontrado"))
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return BadRequest(new { Code = "PROCESSAMENTO_ERRO", Message = response.Message });
-            }
-
-            return Ok(response.Data);
+            return  FromService(response);
         }
     }
 }
