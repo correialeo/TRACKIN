@@ -1,4 +1,4 @@
-Trackin.API - Sprint 1
+Trackin.API - Sprint 3 / CP 04 .NET
 ======================
 
 Descrição do Projeto
@@ -7,7 +7,7 @@ Descrição do Projeto
 O **Trackin.API** é uma API RESTful desenvolvida com ASP.NET Core 8 para automatizar o mapeamento e monitoramento de motocicletas nos pátios da Mottu. Esta solução integra tecnologias como RFID e visão computacional (ML.NET) para localização em tempo real, utilizando uma arquitetura em camadas robusta. A implementação desta primeira sprint foca nos requisitos iniciais:
 
 -   CRUD completo para entidades principais (`Moto`, `Patio`, `SensorRFID`, `ZonaPatio`) com mais de 3 rotas GET parametrizadas.
--   Integração com banco de dados Oracle via Entity Framework Core (EF Core), utilizando migrations para criação de tabelas.
+-   Integração com banco de dados SQL Server via Entity Framework Core (EF Core), utilizando migrations para criação de tabelas.
 -   Documentação da API via OpenAPI com interface gráfica (Swagger).
 
 O domínio está completamente mapeado com todas as entidades definidas, mas nem todas as rotas definidas foram implementadas até o momento.
@@ -21,7 +21,7 @@ Participantes
 Rotas Implementadas
 -------------------
 
-Abaixo estão as rotas implementadas nesta primeira sprint, baseadas nos controllers fornecidos. Todas seguem padrões RESTful e retornam os status HTTP apropriados (200 OK, 201 Created, 204 No Content, 400 Bad Request, 404 Not Found, 500 Internal Server Error).
+Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas seguem padrões RESTful e retornam os status HTTP apropriados (200 OK, 201 Created, 204 No Content, 400 Bad Request, 404 Not Found, 500 Internal Server Error).
 
 ### MotoController
 
@@ -92,7 +92,7 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 ### Pré-requisitos
 
 -   **.NET 8 SDK**: [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
--   **Oracle Database**: Um servidor Oracle configurado e acessível.
+-   **Docker**: Para executar o container do SQL Server. [Download](https://www.docker.com/get-started)
 -   **Git**: Para clonar o repositório.
 
 ### Passos de Instalação
@@ -100,86 +100,125 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 1.  **Clone o Repositório**
     -   Github:
 
-        ```
+        ```bash
         git clone https://github.com/correialeo/TRACKIN.git
-
         ```
     -   Azure Devops:
     
+        ```bash
+        git clone https://Challenge2025-Mottu@dev.azure.com/Challenge2025-Mottu/Mottu/_git/trackin.dotnet.api
+        # Ou via SSH:
+        git clone git@ssh.dev.azure.com:v3/Challenge2025-Mottu/Mottu/trackin.dotnet.api
         ```
-        git clone https://Challenge2025-Mottu@dev.azure.com/Challenge2025-Mottu/Mottu/_git/trackin.dotnet.api (HTTPS)
-        git clone git@ssh.dev.azure.com:v3/Challenge2025-Mottu/Mottu/trackin.dotnet.api (SSH)
 
+2.  **Configure o SQL Server via Docker**
+
+    -   Execute o seguinte comando para criar um container do SQL Server:
+
+        ```bash
+        docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong@Passw0rd"  -p 1433:1433 --name sqlserver-trackin  -d mcr.microsoft.com/mssql/server:2022-latest
         ```
+        - Verifique e modifique de acordo com seu SO.
 
-2.  **Configure as Variáveis de Ambiente**
+    -   Aguarde alguns segundos para o container inicializar completamente.
+
+3.  **Configure as Variáveis de Ambiente**
 
     -   Copie o arquivo `.env.example` para `.env` na raiz do projeto:
 
-        ```
+        ```bash
         cp .env.example .env
-
         ```
 
-    -   Edite o arquivo `.env` com as credenciais do seu banco de dados Oracle:
+    -   Edite o arquivo `.env` com as credenciais do SQL Server:
 
+        ```env
+        // Aqui você deve por o servidor e a porta do banco de dados SQLServer (ex: localhost,1433)
+        DATABASE__SOURCE='localhost,1433'
+        // Aqui você deve por o usuário do banco de dados SQLServer
+        DATABASE__USER='sa'
+        // Aqui você deve por a senha do banco de dados SQLServer
+        DATABASE__PASSWORD='YourStrong@Passw0rd'
+        DATABASE__NAME='TrackinDb'
         ```
-        DATABASE__SOURCE='seu_servidor_oracle'  # Exemplo: localhost:1521/orcl
-        DATABASE__USER='seu_usuario'
-        DATABASE__PASSWORD='sua_senha'
 
-        ```
+4.  **Restaure as Dependências**
 
-3.  **Restaure as Dependências**
+    -   A partir da pasta raiz do projeto, execute o comando para restaurar os pacotes NuGet:
 
-    -   Execute o comando para restaurar os pacotes NuGet:
-
-        ```
+        ```bash
         dotnet restore
-
         ```
 
-4.  **Configure a Conexão com o Banco de Dados**
+5.  **Configure a Conexão com o Banco de Dados**
 
-    -   Certifique-se de que o servidor Oracle está ativo e acessível usando as credenciais fornecidas no `.env`.
-    -   Teste a conexão com o banco, se necessário, utilizando uma ferramenta como SQL Developer ou DBeaver, para garantir que o usuário especificado tem permissões adequadas (ex.: criar tabelas, inserir dados).
-5.  **Aplique as Migrations**
+    -   Certifique-se de que o container do SQL Server está rodando:
 
-    -   Após confirmar que a conexão com o banco está funcionando, aplique as migrations para criar as tabelas no banco de dados Oracle:
-
+        ```bash
+        docker ps
         ```
+
+    -   Você deve ver o container `sqlserver-trackin` na lista com status "Up".
+
+6.  **Aplique as Migrations**
+
+    -   Aplique as migrations para criar as tabelas no banco de dados SQL Server:
+
+        ```bash
         dotnet ef database update
-
         ```
 
-    -   Se houver erros, verifique as configurações no `.env`, a string de conexão no `appsettings.json` (se aplicável), e as permissões do usuário no banco.
+    -   Se houver erros, verifique se o container está rodando e se as configurações no `.env` estão corretas.
 
-6.  **Execute a Aplicação**
+7.  **Execute a Aplicação**
 
     -   Inicie o projeto:
 
-        ```
+        ```bash
         dotnet run
-
         ```
 
     -   A API estará disponível em `https://localhost:5007` (ou a porta configurada).
 
-7.  **Acesse a Documentação Swagger**
+8.  **Acesse a Documentação Swagger**
 
-    -   Ao compilar o projeto, automaticamente ele irá para `https://localhost:5007/swagger` para explorar e testar os endpoints. (Caso esteja no Visual Studio)
+    -   Acesse `https://localhost:5007/swagger` para explorar e testar os endpoints.
+
+### Comandos Úteis do Docker
+
+-   **Parar o container:**
+    ```bash
+    docker stop sqlserver-trackin
+    ```
+
+-   **Iniciar o container novamente:**
+    ```bash
+    docker start sqlserver-trackin
+    ```
+
+-   **Remover o container:**
+    ```bash
+    docker rm sqlserver-trackin
+    ```
+
+-   **Ver logs do container:**
+    ```bash
+    docker logs sqlserver-trackin
+    ```
 
 ### Observações
 
--   Verifique se a porta padrão não está em uso.
--   Certifique-se de que o usuário do banco de dados tem permissões para criar tabelas e executar as operações necessárias.
+-   O SQL Server precisa de pelo menos 2GB de RAM para funcionar adequadamente.
+-   A senha do SQL Server deve atender aos requisitos de complexidade (pelo menos 8 caracteres, maiúsculas, minúsculas, números e símbolos).
+-   Verifique se a porta 1433 não está sendo usada por outra aplicação.
+-   O Dockerfile da aplicação está localizado dentro da pasta `Trackin.API`.
 
 Notas Adicionais
 ----------------
 
--   Esta é a implementação da primeira sprint, atendendo aos requisitos mínimos de CRUD, integração com Oracle via EF Core, e documentação Swagger.
+-   Esta é a implementação da primeira sprint, atendendo aos requisitos mínimos de CRUD, integração com SQL Server via EF Core, e documentação Swagger.
 -   Nem todas as rotas previstas na arquitetura estão implementadas; o foco foi nos controllers listados acima.
--   O dockerfile está dentro de Trackin.API
+-   O banco de dados `TrackinDb` será criado automaticamente ao executar as migrations.
 
 ## Documentação Complementar
 
@@ -188,7 +227,7 @@ Notas Adicionais
 Scripts Azure CLI (Devops)
 ----------------
 Criação Resource Group e VM:
-```sh
+```bash
 az group create --name RG-ChallengeNET --location eastus
 
 az vm create \
@@ -201,7 +240,7 @@ az vm create \
 ```
 
 Abertura de Portas:
-```sh
+```bash
 az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 80 --priority 1001
 az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 443 --priority 1002
 az vm open-port --resource-group RG-ChallengeNET --name VM-ChallengeNET --port 5000 --priority 1003
