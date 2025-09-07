@@ -13,7 +13,6 @@ namespace Trackin.Application.Interfaces
             bool descendingOrder = false);
         Task<ServiceResponse<IEnumerable<SensorRFID>>> GetAllSensoresRFIDAsync();
         Task<ServiceResponse<SensorRFID>> GetSensorRFIDByIdAsync(long id);
-        Task<ServiceResponse<ZonaPatio>> GetZonaPatioByIdAsync(long id);
         Task<ServiceResponse<SensorRFID>> CreateSensorRFIDAsync(CriarSensorRFIdDTO sensorRFIDDTO);
         Task<ServiceResponse<SensorRFID>> UpdateSensorRFIDAsync(long id, CriarSensorRFIdDTO sensorRFIDDTO);
         Task<ServiceResponse<SensorRFID>> DeleteSensorRFIDAsync(long id);

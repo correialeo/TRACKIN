@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
-using Trackin.Application.Services;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 
 namespace Trackin.API.Controllers
@@ -11,9 +11,9 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class PatioController : ControllerBase
     {
-        private readonly PatioService _patioService;
+        private readonly IPatioService _patioService;
 
-        public PatioController(PatioService patioService)
+        public PatioController(IPatioService patioService)
         {
             _patioService = patioService;
         }

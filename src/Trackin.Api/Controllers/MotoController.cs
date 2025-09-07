@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
-using Trackin.Application.Services;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Domain.Enums;
 
@@ -12,9 +12,9 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class MotoController : ControllerBase
     {
-        private readonly MotoService _motoService;
+        private readonly IMotoService _motoService;
 
-        public MotoController(MotoService motoService)
+        public MotoController(IMotoService motoService)
         {
             _motoService = motoService;
         }
@@ -186,7 +186,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Put(long id, [FromBody] EditarMotoDTO motoDto)
         {
-            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id, motoDto);
+            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id);
             if (result.Message == "Moto não encontrada.")
             {
                 return NotFound(result.Message);

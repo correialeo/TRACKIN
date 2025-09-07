@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
-using Trackin.Application.Services;
+using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 
 namespace Trackin.API.Controllers
@@ -11,9 +11,9 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class SensorRFIDController : ControllerBase
     {
-        private readonly SensorRFIDService _sensorRFIDService;
+        private readonly ISensorRFIDService _sensorRFIDService;
 
-        public SensorRFIDController(SensorRFIDService sensorRFIDService)
+        public SensorRFIDController(ISensorRFIDService sensorRFIDService)
         {
             _sensorRFIDService = sensorRFIDService;
         }

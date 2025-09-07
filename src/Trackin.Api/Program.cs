@@ -3,6 +3,7 @@ using dotenv.net;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Trackin.Api;
+using Trackin.Application.Interfaces;
 using Trackin.Application.Services;
 using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
@@ -42,11 +43,11 @@ builder.Services.AddDbContext<TrackinContext>(options =>
     }
  );
 
-builder.Services.AddScoped<MotoService>();
-builder.Services.AddScoped<RFIDService>();
-builder.Services.AddScoped<PatioService>();
-builder.Services.AddScoped<ZonaPatioService>();
-builder.Services.AddScoped<SensorRFIDService>();
+builder.Services.AddScoped<IMotoService, MotoService>();
+builder.Services.AddScoped<IRFIDService, RFIDService>();
+builder.Services.AddScoped<IPatioService, PatioService>();
+builder.Services.AddScoped<IZonaPatioService, ZonaPatioService>();
+builder.Services.AddScoped<ISensorRFIDService, SensorRFIDService>();
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();

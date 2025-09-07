@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
-using Trackin.Application.Services;
+using Trackin.Application.Interfaces;
 
 namespace Trackin.API.Controllers
 {
@@ -10,8 +10,8 @@ namespace Trackin.API.Controllers
     [Produces("application/json")]
     public class RFIDController : ControllerBase
     {
-        private readonly RFIDService _service;
-        public RFIDController(RFIDService service)
+        private readonly IRFIDService _service;
+        public RFIDController(IRFIDService service)
         {
             _service = service;
         }
