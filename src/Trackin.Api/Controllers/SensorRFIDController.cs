@@ -9,7 +9,7 @@ namespace Trackin.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
-    public class SensorRFIDController : ControllerBase
+    public class SensorRFIDController : BaseController
     {
         private readonly ISensorRFIDService _sensorRFIDService;
 
@@ -32,23 +32,14 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetSensoresRFID([FromQuery] PaginacaoDTO paginacao)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
             ServiceResponsePaginado<SensorRFID> response = await _sensorRFIDService.GetAllSensoresRFIDPaginatedAsync(
                 paginacao.PageNumber,
                 paginacao.PageSize,
                 paginacao.Ordering,
                 paginacao.DescendingOrder);
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            
+            return FromServicePaged(response);
         }
 
         /// <summary>
@@ -65,18 +56,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetAllSensoresRFID()
         {
             ServiceResponse<IEnumerable<SensorRFID>> response = await _sensorRFIDService.GetAllSensoresRFIDAsync();
-
-            if (response.Message == "Nenhum sensor RFID encontrado.")
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            return FromService(response);
         }
 
         /// <summary>
@@ -94,18 +74,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetSensorRFID(long id)
         {
             ServiceResponse<SensorRFID> response = await _sensorRFIDService.GetSensorRFIDByIdAsync(id);
-
-            if (response.Message?.Contains("não encontrado") == true)
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            return FromService(response);
         }
 
         /// <summary>
@@ -125,22 +94,11 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PutSensorRFID(long id, CriarSensorRFIdDTO sensorRFIDDTO)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
             ServiceResponse<SensorRFID> result = await _sensorRFIDService.UpdateSensorRFIDAsync(id, sensorRFIDDTO);
-
-            if (result.Message?.Contains("não encontrado") == true)
-            {
-                return NotFound(result.Message);
-            }
-
+            
             if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
+                return FromService(result);
 
             return NoContent();
         }
@@ -159,17 +117,11 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> PostSensorRFID(CriarSensorRFIdDTO sensorRFID)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             ServiceResponse<SensorRFID> result = await _sensorRFIDService.CreateSensorRFIDAsync(sensorRFID);
 
             if (!result.Success)
-            {
                 return BadRequest(result.Message);
-            }
+            
 
             return CreatedAtAction(nameof(GetSensorRFID), new { id = result.Data.Id }, result.Data);
         }
@@ -189,16 +141,9 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> DeleteSensorRFID(long id)
         {
             ServiceResponse<SensorRFID> result = await _sensorRFIDService.DeleteSensorRFIDAsync(id);
-
-            if (result.Message?.Contains("não encontrado") == true)
-            {
-                return NotFound(result.Message);
-            }
-
+            
             if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
+                return FromService(result);
 
             return NoContent();
         }
