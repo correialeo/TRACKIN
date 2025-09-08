@@ -170,26 +170,6 @@ namespace Trackin.API.Controllers
 
             return NoContent();
         }
-
-        /// <summary>
-        /// Adiciona uma imagem base64 como referência para uma moto
-        /// </summary>
-        /// <param name="id">ID da moto.</param>
-        /// <param name="imageB64">Imagem codificada em Base64</param>
-        /// <returns>Retorna a moto com a imagem adicionada</returns>
-        [HttpPost("{id}/imagem")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PostImagem(long id, [FromBody] string imageB64)
-        {
-            ServiceResponse<Moto> result = await _motoService.CadastrarImagemReferenciaAsync(id, imageB64);
-          
-            if (!result.Success)
-                return FromService(result);
-            
-
-            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result.Data);
-        }
+        
     }
 }

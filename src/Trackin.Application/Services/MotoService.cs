@@ -218,27 +218,7 @@ namespace Trackin.Application.Services
             }
         }
 
-        public async Task<ServiceResponse<Moto>> CadastrarImagemReferenciaAsync(long id, string imagemReferencia)
-        {
-            try
-            {
-                var moto = await ObterMoto(id);
-                if (moto == null)
-                    return Erro<Moto>("moto não encontrada");
-
-                moto.AtualizarImagemReferencia(imagemReferencia);
-
-                await _motoRepository.UpdateAsync(moto);
-                await _motoRepository.SaveChangesAsync();
-
-                return Sucesso(moto);
-            }
-            catch (Exception ex)
-            { 
-                return Erro<Moto>($"Erro ao cadastrar imagem de referencia: {ex.Message}");
-                
-            }
-        }
+        
     }
 }
 

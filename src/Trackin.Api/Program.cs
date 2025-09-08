@@ -56,6 +56,8 @@ builder.Services.AddScoped<IEventoMotoRepository, EventoMotoRepository>();
 builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository>();
 builder.Services.AddScoped<IPatioRepository, PatioRepository>();
 builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
+builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
+
 
 WebApplication app = builder.Build();
 
