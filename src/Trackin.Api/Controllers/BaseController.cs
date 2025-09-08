@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 
 namespace Trackin.API.Controllers;
@@ -18,7 +19,7 @@ public abstract class BaseController : ControllerBase
                 if (!response.Success)
                 {
                         var msg = response.Message ?? "Erro ao processar requisição.";
-                        if (msg.Contains("Não encontrado"))
+                        if (Regex.IsMatch(msg, @"encontrad[oa]", RegexOptions.IgnoreCase))
                                 return NotFound(msg);
                         return BadRequest(msg);
                 }
