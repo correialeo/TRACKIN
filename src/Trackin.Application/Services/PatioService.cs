@@ -135,41 +135,6 @@ namespace Trackin.Application.Services
                 return Erro<Patio>($"Erro ao remover pátio: {ex.Message}");
             }
         }
-
-        public async Task<ServiceResponse<double>> GetTaxaOcupacaoAsync(long patioId)
-        {
-            try
-            {
-                var patio = await ObterPatio(patioId);
-                if (patio == null) return Erro<double>(PatioNaoExiste);
-
-                double taxaOcupacao = patio.CalcularTaxaOcupacao();
-                return Sucesso(taxaOcupacao);
-            }
-            catch (Exception ex)
-            {
-               return Erro<double>($"Erro ao calcular taxa: {ex.Message}");
-            }
-        }
-
-        public async Task<ServiceResponse<bool>> ValidarCoordenadaAsync(long patioId, double x, double y)
-        {
-            try
-            {
-                var patio = await ObterPatio(patioId);
-                if (patio == null) return Erro<bool>(PatioNaoExiste);
-
-                Coordenada coordenada = new Coordenada(x, y);
-                bool coordenadaValida = patio.CoordenadaEstaValida(coordenada);
-
-                return Sucesso(coordenadaValida);
-            }
-            catch (Exception ex)
-            {
-                {
-                    return Erro<bool>($"Erro ao validar coordenada: {ex.Message}");
-                }
-            }
-        }
+        
     }
 }
