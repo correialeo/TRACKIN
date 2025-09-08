@@ -1,4 +1,5 @@
-﻿using Trackin.Domain.Enums;
+﻿using System.Text.Json.Serialization;
+using Trackin.Domain.Enums;
 using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Domain.Entity
@@ -13,6 +14,7 @@ namespace Trackin.Domain.Entity
         public Coordenada PontoFinal { get; private set; }
         public string Cor { get; private set; } = string.Empty;
 
+        [JsonIgnore]
         public Patio Patio { get; private set; }
         private readonly List<SensorRFID> _sensoresRFID = new();
         public IReadOnlyCollection<SensorRFID> SensoresRFID => _sensoresRFID.AsReadOnly();

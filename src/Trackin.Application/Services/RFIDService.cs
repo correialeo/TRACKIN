@@ -12,6 +12,10 @@ namespace Trackin.Application.Services
 {
     public class RFIDService : IRFIDService
     {
+        private const string MotoNaoExiste = "Moto não encontrada";
+        private const string SensorNaoExiste = "Sensor RFID não encontrado";
+        private const string SensorSemZona = "Sensor não está associado a nenhuma zona";
+
         private readonly IMotoRepository _motoRepository;
         private readonly ISensorRFIDRepository _sensorRepository;
         private readonly IEventoMotoRepository _eventoRepository;
@@ -31,115 +35,59 @@ namespace Trackin.Application.Services
             _localizacaoRepository = localizacaoRepository;
             _logger = logger;
         }
+        
+        private async Task<Moto?> ObterMoto(string rfid) => await _motoRepository.GetByRFIDTagAsync(rfid);
+
+        private async Task<SensorRFID?> ObterSensor(long sensorId) => await _sensorRepository.GetSensorWithZonaAndPatioAsync(sensorId);
+
+        private ServiceResponse<T> Sucesso<T>(T data, string message = "") => new() { Success = true, Data = data, Message = message };
+
+        private ServiceResponse<T> Erro<T>(string message) => new() { Success = false, Message = message };
+
 
         public async Task<ServiceResponse<LocalizacaoMotoDTO>> ProcessarLeituraRFID(RFIDLeituraDTO leitura)
         {
-            try
+             try
             {
-                Moto? moto = await _motoRepository.GetByRFIDTagAsync(leitura.RFID);
-                if (moto == null)
-                {
-                    _logger.LogWarning($"RFID não encontrado: {leitura.RFID}");
-                    return new ServiceResponse<LocalizacaoMotoDTO>
-                    {
-                        Success = false,
-                        Message = $"Moto com RFID {leitura.RFID} não encontrada"
-                    };
-                }
+                Moto? moto = await ObterMoto(leitura.RFID);
+                if (moto == null) return Erro<LocalizacaoMotoDTO>(MotoNaoExiste);
 
-                SensorRFID? sensor = await _sensorRepository.GetSensorWithZonaAndPatioAsync(leitura.SensorId);
+                SensorRFID? sensor = await ObterSensor(leitura.SensorId);
+                if (sensor == null) return Erro<LocalizacaoMotoDTO>(SensorNaoExiste);
+                if (sensor.ZonaPatio == null) return Erro<LocalizacaoMotoDTO>(SensorSemZona);
 
-                if (sensor == null)
-                {
-                    _logger.LogWarning($"Sensor RFID não encontrado: {leitura.SensorId}");
-                    return new ServiceResponse<LocalizacaoMotoDTO>
-                    {
-                        Success = false,
-                        Message = $"Sensor RFID {leitura.SensorId} não encontrado"
-                    };
-                }
-
-                if (sensor.ZonaPatio == null)
-                {
-                    _logger.LogWarning($"Sensor {leitura.SensorId} não está associado a nenhuma zona");
-                    return new ServiceResponse<LocalizacaoMotoDTO>
-                    {
-                        Success = false,
-                        Message = $"Sensor {leitura.SensorId} não está associado a nenhuma zona"
-                    };
-                }
-
-                (double coordenadaFinalX, double coordenadaFinalY) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
+                (double x, double y) = CalcularCoordenadas(sensor, leitura.PotenciaSinal);
                 EventoMotoTipo tipoEvento = DeterminarTipoEvento(sensor.ZonaPatio.TipoZona);
                 MotoStatus status = DeterminarStatusMoto(tipoEvento);
 
-                EventoMoto? evento = new EventoMoto(
-                    moto.Id,
-                    tipoEvento,
-                    null,
-                    leitura.SensorId,
-                    null,
-                    null,
-                    FonteDados.RFID
-                );
+                EventoMoto evento = new(moto.Id, tipoEvento, null, leitura.SensorId, null, null, FonteDados.RFID);
+                LocalizacaoMoto localizacao = new(moto.Id, sensor.ZonaPatio.PatioId, new Coordenada(x, y), status, FonteDados.RFID, CalcularConfiabilidade(sensor));
 
-                LocalizacaoMoto? localizacao = new LocalizacaoMoto(
-                    moto.Id,
-                    sensor.ZonaPatio.PatioId,
-                    new Coordenada(coordenadaFinalX, coordenadaFinalY),
-                    status,
-                    FonteDados.RFID,
-                    CalcularConfiabilidade(sensor)
-                );
+                try { moto.AlterarStatus(status); await _motoRepository.UpdateAsync(moto); }
+                catch (Exception ex) { _logger.LogWarning($"Não foi possível atualizar o status da moto: {ex.Message}"); }
 
-                try
-                {
-                    moto.AlterarStatus(status);
-                    await _motoRepository.UpdateAsync(moto);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning($"Não foi possível atualizar o status da moto: {ex.Message}");
-                }
-
-                await Task.WhenAll(
-                    _eventoRepository.AddAsync(evento),
-                    _localizacaoRepository.AddAsync(localizacao)
-                );
-
+                await Task.WhenAll(_eventoRepository.AddAsync(evento), _localizacaoRepository.AddAsync(localizacao));
                 await _eventoRepository.SaveChangesAsync();
 
-                //await NotificarAtualizacaoLocalizacao(localizacao);
-
-                LocalizacaoMotoDTO localizacaoDto = new LocalizacaoMotoDTO
+                var localizacaoDto = new LocalizacaoMotoDTO
                 {
                     Id = localizacao.Id,
                     MotoId = moto.Id,
                     PatioId = sensor.ZonaPatio.PatioId,
-                    CoordenadaX = coordenadaFinalX,
-                    CoordenadaY = coordenadaFinalY,
+                    CoordenadaX = x,
+                    CoordenadaY = y,
                     Timestamp = DateTime.UtcNow,
                     Status = status,
                     FonteDados = FonteDados.RFID,
                     Confiabilidade = CalcularConfiabilidade(sensor)
                 };
 
-                return new ServiceResponse<LocalizacaoMotoDTO>
-                {
-                    Success = true,
-                    Message = "Leitura RFID processada com sucesso",
-                    Data = localizacaoDto
-                };
+                return Sucesso(localizacaoDto, "Leitura RFID processada com sucesso");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Erro ao processar leitura RFID {leitura.RFID}: {ex.Message}");
-                return new ServiceResponse<LocalizacaoMotoDTO>
-                {
-                    Success = false,
-                    Message = $"Erro ao processar leitura RFID: {ex.Message}",
-                    Data = null
-                };
+                return Erro<LocalizacaoMotoDTO>($"Erro ao processar leitura RFID: {ex.Message}");
             }
         }
 

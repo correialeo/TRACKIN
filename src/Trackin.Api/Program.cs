@@ -48,6 +48,9 @@ builder.Services.AddScoped<IRFIDService, RFIDService>();
 builder.Services.AddScoped<IPatioService, PatioService>();
 builder.Services.AddScoped<IZonaPatioService, ZonaPatioService>();
 builder.Services.AddScoped<ISensorRFIDService, SensorRFIDService>();
+builder.Services.AddScoped<IPatioValidacaoService, PatioValidacaoService>();
+builder.Services.AddScoped<IPatioMetricasService, PatioMetricasService>();
+
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
@@ -56,6 +59,8 @@ builder.Services.AddScoped<IEventoMotoRepository, EventoMotoRepository>();
 builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository>();
 builder.Services.AddScoped<IPatioRepository, PatioRepository>();
 builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
+builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
+
 
 WebApplication app = builder.Build();
 

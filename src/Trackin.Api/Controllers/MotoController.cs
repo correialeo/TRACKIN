@@ -8,9 +8,8 @@ using Trackin.Domain.Enums;
 namespace Trackin.API.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
     [Produces("application/json")]
-    public class MotoController : ControllerBase
+    public class MotoController : BaseController
     {
         private readonly IMotoService _motoService;
 
@@ -29,11 +28,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Post([FromBody] MotoDTO motoDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
+            
             ServiceResponse<MotoDTO> result = await _motoService.CreateMotoAsync(motoDto);
             if (!result.Success)
             {
@@ -55,17 +50,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetById(long id)
         {
             ServiceResponse<Moto> response = await _motoService.GetMotoByIdAsync(id);
-            if (response.Message == "Moto não encontrada.")
-            {
-                return NotFound(response.Message);
-            }
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+                return FromService(response);
         }
 
         /// <summary>
@@ -78,11 +63,7 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> GetAll()
         {
             ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosAsync();
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-            return Ok(response.Data);
+            return FromService(response);
         }
 
         /// <summary>
@@ -96,23 +77,14 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginacaoDTO paginacao)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
 
             ServiceResponsePaginado<Moto> response = await _motoService.GetAllMotosPaginatedAsync(
                 paginacao.PageNumber,
                 paginacao.PageSize,
                 paginacao.Ordering,
                 paginacao.DescendingOrder);
-
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            
+            return FromServicePaged(response);
         }
 
         /// <summary>
@@ -132,12 +104,8 @@ namespace Trackin.API.Controllers
                 paginacao.PageSize,
                 paginacao.Ordering,
                 paginacao.DescendingOrder);
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+           
+            return FromServicePaged(response);
         }
 
         /// <summary>
@@ -154,11 +122,6 @@ namespace Trackin.API.Controllers
             MotoStatus status,
             [FromQuery] PaginacaoDTO paginacao)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             ServiceResponsePaginado<Moto> response = await _motoService.GetMotosByStatusPaginatedAsync(
                 status,
                 paginacao.PageNumber,
@@ -166,12 +129,7 @@ namespace Trackin.API.Controllers
                 paginacao.Ordering,
                 paginacao.DescendingOrder);
 
-            if (!response.Success)
-            {
-                return StatusCode(500, response.Message);
-            }
-
-            return Ok(response.Data);
+            return FromServicePaged(response);
         }
 
         /// <summary>
@@ -187,16 +145,9 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> Put(long id, [FromBody] EditarMotoDTO motoDto)
         {
             ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id);
-            if (result.Message == "Moto não encontrada.")
-            {
-                return NotFound(result.Message);
-            }
-
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-
+            if (!result.Success) 
+                return FromService(result);
+            
             return NoContent();
         }
 
@@ -212,48 +163,13 @@ namespace Trackin.API.Controllers
         public async Task<IActionResult> Delete(long id)
         {
             ServiceResponse<Moto> result = await _motoService.DeleteMotoAsync(id);
-            if (result.Message == "Moto não encontrada.")
-            {
-                return NotFound(result.Message);
-            }
-
+            
             if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
+                return FromService(result);
+            
 
             return NoContent();
         }
-
-        /// <summary>
-        /// Adiciona uma imagem base64 como referência para uma moto
-        /// </summary>
-        /// <param name="id">ID da moto.</param>
-        /// <param name="imageB64">Imagem codificada em Base64</param>
-        /// <returns>Retorna a moto com a imagem adicionada</returns>
-        [HttpPost("{id}/imagem")]
-        [ProducesResponseType(StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PostImagem(long id, [FromBody] string imageB64)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            ServiceResponse<Moto> result = await _motoService.CadastrarImagemReferenciaAsync(id, imageB64);
-            if (result.Message == "Moto não encontrada.")
-            {
-                return NotFound(result.Message);
-            }
-
-            if (!result.Success)
-            {
-                return BadRequest(result.Message);
-            }
-
-            return CreatedAtAction(nameof(GetById), new { id = result.Data.Id }, result.Data);
-        }
+        
     }
 }

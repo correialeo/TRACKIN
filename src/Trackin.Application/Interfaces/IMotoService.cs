@@ -29,6 +29,5 @@ namespace Trackin.Application.Interfaces
             bool descendingOrder = false);
         Task<ServiceResponse<Moto>> UpdateMotoAsync(long id);
         Task<ServiceResponse<Moto>> DeleteMotoAsync(long id);
-        Task<ServiceResponse<Moto>> CadastrarImagemReferenciaAsync(long id, string imagemReferencia);
     }
 }

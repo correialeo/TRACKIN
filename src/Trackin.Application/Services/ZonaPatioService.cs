@@ -11,6 +11,16 @@ namespace Trackin.Application.Services
     {
         private readonly IZonaPatioRepository _zonaPatioRepository;
         private readonly IPatioRepository _patioRepository;
+        
+        private const string ZonaNaoEncontrada = "Zona de pátio não encontrada.";
+        private const string PatioNaoEncontrado = "Pátio associado não encontrado.";
+        
+        private ServiceResponse<T> Sucesso<T>(T data, string message = "") => new() { Success = true, Data = data, Message = message };
+        private ServiceResponse<T> Erro<T>(string message) => new() { Success = false, Message = message };
+
+        private async Task<ZonaPatio?> ObterZona(long id) => await _zonaPatioRepository.GetByIdAsync(id);
+        private async Task<Patio?> ObterPatio(long id) => await _patioRepository.GetByIdAsync(id);
+
 
         public ZonaPatioService(IZonaPatioRepository zonaPatioRepository, IPatioRepository patioRepository)
         {
@@ -36,68 +46,41 @@ namespace Trackin.Application.Services
                 return new ServiceResponsePaginado<ZonaPatio>(new List<ZonaPatio>(), pageNumber, pageSize, 0)
                 {
                     Success = false,
-                    Message = $"Erro ao obter zonas de pátio paginadas: {ex.Message}"
+                    Message = $"Erro ao obter zona de pátio paginada: {ex.Message}"
                 };
             }
         }
+
 
         public async Task<ServiceResponse<IEnumerable<ZonaPatio>>> GetAllZonasPatiosAsync()
         {
             try
             {
-                IEnumerable<ZonaPatio> zonasPatio = await _zonaPatioRepository.GetAllAsync();
-                if (zonasPatio == null || !zonasPatio.Any())
-                {
-                    return new ServiceResponse<IEnumerable<ZonaPatio>>
-                    {
-                        Success = false,
-                        Message = "Nenhuma zona de pátio encontrada."
-                    };
-                }
+                var zonas = await _zonaPatioRepository.GetAllAsync();
+                if (zonas == null || !zonas.Any())
+                    return Erro<IEnumerable<ZonaPatio>>("Nenhuma zona de pátio encontrada.");
 
-                return new ServiceResponse<IEnumerable<ZonaPatio>>
-                {
-                    Success = true,
-                    Data = zonasPatio
-                };
+                return Sucesso(zonas);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<IEnumerable<ZonaPatio>>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter zonas de pátio: {ex.Message}"
-                };
+                return Erro<IEnumerable<ZonaPatio>>($"Erro ao obter zonas de pátio: {ex.Message}");
             }
+            
         }
 
         public async Task<ServiceResponse<ZonaPatio>> GetZonaPatioByIdAsync(long id)
         {
             try
             {
-                ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
-                if (zonaPatio == null)
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = $"Zona de pátio com ID {id} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(id);
+                if (zona == null) return Erro<ZonaPatio>(ZonaNaoEncontrada);
 
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = true,
-                    Data = zonaPatio
-                };
+                return Sucesso(zona);
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter zona de pátio: {ex.Message}"
-                };
+                return Erro<ZonaPatio>($"Erro ao obter zona de pátio: {ex.Message}");
             }
         }
 
@@ -105,129 +88,50 @@ namespace Trackin.Application.Services
         {
             try
             {
-                Patio patio = await _patioRepository.GetByIdAsync(dto.PatioId);
-                if (patio == null)
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = $"Pátio com ID {dto.PatioId} não encontrado."
-                    };
-                }
+                var patio = await ObterPatio(dto.PatioId);
+                if (patio == null) return Erro<ZonaPatio>(PatioNaoEncontrado);
 
-                Coordenada pontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
-                Coordenada pontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
+                var pontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
+                var pontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
 
-                ZonaPatio zonaPatio = patio.CriarZona(
-                    nome: dto.Nome,
-                    tipoZona: dto.TipoZona,
-                    pontoInicial: pontoInicial,
-                    pontoFinal: pontoFinal,
-                    cor: dto.Cor
-                );
-
+                var zona = patio.CriarZona(dto.Nome, dto.TipoZona, pontoInicial, pontoFinal, dto.Cor);
                 await _patioRepository.SaveChangesAsync();
 
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = true,
-                    Message = "Zona de pátio criada com sucesso.",
-                    Data = zonaPatio
-                };
-            }
-            catch (ArgumentException ex)
-            {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Dados inválidos: {ex.Message}"
-                };
-            }
-            catch (InvalidOperationException ex)
-            {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Operação inválida: {ex.Message}"
-                };
+                return Sucesso(zona, "Zona de pátio criada com sucesso.");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Erro ao criar zona de pátio: {ex.Message}"
-                };
+                return Erro<ZonaPatio>($"Erro ao criar zona de pátio: {ex.Message}");
             }
         }
 
-        public async Task<ServiceResponse<ZonaPatio>> UpdateZonaPatioAsync(long id, CriarZonaPatioDTO zonaPatioDto)
+        public async Task<ServiceResponse<ZonaPatio>> UpdateZonaPatioAsync(long id, CriarZonaPatioDTO dto)
         {
             try
             {
-                ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
-                if (zonaPatio == null)
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = $"Zona de pátio com ID {id} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(id);
+                if (zona == null) return Erro<ZonaPatio>(ZonaNaoEncontrada);
 
-                if (!string.IsNullOrEmpty(zonaPatioDto.Cor) && zonaPatioDto.Cor != zonaPatio.Cor)
-                {
-                    zonaPatio.AlterarCor(zonaPatioDto.Cor);
-                }
+                if (!string.IsNullOrEmpty(dto.Cor) && dto.Cor != zona.Cor)
+                    zona.AlterarCor(dto.Cor);
 
-                Coordenada novoPontoInicial = new Coordenada(zonaPatioDto.CoordenadaInicialX, zonaPatioDto.CoordenadaInicialY);
-                Coordenada novoPontoFinal = new Coordenada(zonaPatioDto.CoordenadaFinalX, zonaPatioDto.CoordenadaFinalY);
+                var novoPontoInicial = new Coordenada(dto.CoordenadaInicialX, dto.CoordenadaInicialY);
+                var novoPontoFinal = new Coordenada(dto.CoordenadaFinalX, dto.CoordenadaFinalY);
 
-                Patio patio = await _patioRepository.GetByIdAsync(zonaPatio.PatioId);
-                if (patio == null)
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = "Pátio associado não encontrado."
-                    };
-                }
+                var patio = await ObterPatio(zona.PatioId);
+                if (patio == null) return Erro<ZonaPatio>(PatioNaoEncontrado);
 
                 if (!patio.CoordenadaEstaValida(novoPontoInicial) || !patio.CoordenadaEstaValida(novoPontoFinal))
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = "As coordenadas especificadas estão fora dos limites do pátio."
-                    };
-                }
+                    return Erro<ZonaPatio>("As coordenadas estão fora dos limites do pátio.");
 
-                zonaPatio.RedimensionarZona(novoPontoInicial, novoPontoFinal);
-
+                zona.RedimensionarZona(novoPontoInicial, novoPontoFinal);
                 await _zonaPatioRepository.SaveChangesAsync();
 
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = true,
-                    Message = "Zona de pátio atualizada com sucesso.",
-                    Data = zonaPatio
-                };
-            }
-            catch (ArgumentException ex)
-            {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Dados inválidos: {ex.Message}"
-                };
+                return Sucesso(zona, "Zona de pátio atualizada com sucesso.");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Erro ao atualizar zona de pátio: {ex.Message}"
-                };
+                return Erro<ZonaPatio>($"Erro ao atualizar zona de pátio: {ex.Message}");
             }
         }
 
@@ -235,42 +139,20 @@ namespace Trackin.Application.Services
         {
             try
             {
-                ZonaPatio? zonaPatio = await _zonaPatioRepository.GetByIdAsync(id);
-                if (zonaPatio == null)
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = $"Zona de pátio com ID {id} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(id);
+                if (zona == null) return Erro<ZonaPatio>(ZonaNaoEncontrada);
 
-                if (zonaPatio.SensoresRFID.Any())
-                {
-                    return new ServiceResponse<ZonaPatio>
-                    {
-                        Success = false,
-                        Message = "Não é possível remover uma zona que possui sensores RFID associados."
-                    };
-                }
+                if (zona.SensoresRFID.Any())
+                    return Erro<ZonaPatio>("Não é possível remover uma zona com sensores RFID associados.");
 
-                await _zonaPatioRepository.RemoveAsync(zonaPatio);
+                await _zonaPatioRepository.RemoveAsync(zona);
                 await _zonaPatioRepository.SaveChangesAsync();
 
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = true,
-                    Message = "Zona de pátio removida com sucesso.",
-                    Data = zonaPatio
-                };
+                return Sucesso(zona, "Zona de pátio removida com sucesso.");
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<ZonaPatio>
-                {
-                    Success = false,
-                    Message = $"Erro ao remover zona de pátio: {ex.Message}"
-                };
+                return Erro<ZonaPatio>($"Erro ao remover zona de pátio: {ex.Message}");
             }
         }
 
@@ -278,31 +160,14 @@ namespace Trackin.Application.Services
         {
             try
             {
-                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
-                if (zona == null)
-                {
-                    return new ServiceResponse<double>
-                    {
-                        Success = false,
-                        Message = $"Zona com ID {zonaId} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(zonaId);
+                if (zona == null) return Erro<double>(ZonaNaoEncontrada);
 
-                double area = zona.CalcularArea();
-
-                return new ServiceResponse<double>
-                {
-                    Success = true,
-                    Data = area
-                };
+                return Sucesso(zona.CalcularArea());
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<double>
-                {
-                    Success = false,
-                    Message = $"Erro ao calcular área da zona: {ex.Message}"
-                };
+                return Erro<double>($"Erro ao calcular área da zona: {ex.Message}");
             }
         }
 
@@ -310,31 +175,14 @@ namespace Trackin.Application.Services
         {
             try
             {
-                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
-                if (zona == null)
-                {
-                    return new ServiceResponse<Coordenada>
-                    {
-                        Success = false,
-                        Message = $"Zona com ID {zonaId} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(zonaId);
+                if (zona == null) return Erro<Coordenada>(ZonaNaoEncontrada);
 
-                Coordenada centro = zona.ObterCentroZona();
-
-                return new ServiceResponse<Coordenada>
-                {
-                    Success = true,
-                    Data = centro
-                };
+                return Sucesso(zona.ObterCentroZona());
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<Coordenada>
-                {
-                    Success = false,
-                    Message = $"Erro ao obter centro da zona: {ex.Message}"
-                };
+                return Erro<Coordenada>($"Erro ao obter centro da zona: {ex.Message}");
             }
         }
 
@@ -342,32 +190,15 @@ namespace Trackin.Application.Services
         {
             try
             {
-                ZonaPatio zona = await _zonaPatioRepository.GetByIdAsync(zonaId);
-                if (zona == null)
-                {
-                    return new ServiceResponse<bool>
-                    {
-                        Success = false,
-                        Message = $"Zona com ID {zonaId} não encontrada."
-                    };
-                }
+                var zona = await ObterZona(zonaId);
+                if (zona == null) return Erro<bool>(ZonaNaoEncontrada);
 
-                Coordenada posicao = new Coordenada(x, y);
-                bool contemPosicao = zona.ContemPosicao(posicao);
-
-                return new ServiceResponse<bool>
-                {
-                    Success = true,
-                    Data = contemPosicao
-                };
+                var posicao = new Coordenada(x, y);
+                return Sucesso(zona.ContemPosicao(posicao));
             }
             catch (Exception ex)
             {
-                return new ServiceResponse<bool>
-                {
-                    Success = false,
-                    Message = $"Erro ao verificar posição na zona: {ex.Message}"
-                };
+                return Erro<bool>($"Erro ao verificar posição na zona: {ex.Message}");
             }
         }
 
