@@ -12,6 +12,22 @@ O **Trackin.API** é uma API RESTful desenvolvida com ASP.NET Core 8 para automa
 
 O domínio está completamente mapeado com todas as entidades definidas, mas nem todas as rotas definidas foram implementadas até o momento.
 
+## 🌐 Descrição do Domínio
+
+O **Trackin.API** organiza e gerencia o monitoramento de motocicletas nos pátios da Mottu, fornecendo **rastreamento em tempo real**, registro de localização, status e movimentação das motos, além de gestão de pátios e sensores.  
+
+A aplicação segue uma **arquitetura em camadas**, garantindo escalabilidade e facilidade de manutenção, e está estruturada com as seguintes regras de negócio e conceitos do domínio:
+
+- Cada **Moto** pertence a um único **Pátio** e possui um **RFID único**. Seu modelo e ano são validados, garantindo consistência nos registros.
+- Os **Pátios** são representados com dimensões físicas, endereço completo e planta baixa opcional, permitindo localizar e organizar zonas internas.
+- Cada **Zona do Pátio** define uma área específica, com tipo (como entrada, saída ou estacionamento), coordenadas e cor de identificação.
+- Os **Sensores RFID** são vinculados a zonas, registrando leituras automáticas das motos, incluindo posição, altura e ângulo de visão.
+- As **leituras de RFID** são armazenadas com timestamp, status da moto e confiabilidade da informação, permitindo monitoramento preciso.
+- A API oferece **CRUD completo** para todas as entidades principais, consultas parametrizadas, paginação e ordenação dos resultados.
+
+O domínio garante **consistência, rastreabilidade e integridade dos dados**, permitindo expansão futura para monitoramento avançado, relatórios e integrações externas.
+
+
 👨‍💻Participantes
 -------------------
 - Julia Brito - RM 558831
@@ -25,31 +41,35 @@ Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas
 
 ### 🚲MotoController
 
--   **GET /api/moto**\
-    Lista todas as motos cadastradas.
--   **GET /api/moto/{id}**\
-    Retorna uma moto específica pelo ID.
--   **GET /api/moto/patio/{patioId}**\
-    Lista todas as motos de um determinado pátio.
--   **GET /api/moto/status/{status}**\
-    Lista todas as motos com um status específico (ex.: Disponível, Em Manutenção).
 -   **POST /api/moto**\
     Cria uma nova moto.
+-   **GET /api/moto**\
+    Retorna motos com paginação.
+-   **GET /api/moto/{id}**\
+    Retorna uma moto pelo seu ID.
 -   **PUT /api/moto/{id}**\
     Atualiza uma moto existente.
 -   **DELETE /api/moto/{id}**\
     Exclui uma moto pelo ID.
+-   **GET /api/moto/all**\
+    Retorna todas as motos.
+-   **GET /api/moto/patio/{patioid}**\
+    Retorna todas as motos de um determinado pátio com paginação.
+-   **GET /api/moto/status/{status}**\
+    Retorna motos por status com paginação.
 -   **POST /api/moto/{id}/imagem**\
     Adiciona uma imagem base64 como referência para uma moto.
 
 ### 🅿️PatioController
 
 -   **GET /api/patio**\
-    Lista todos os pátios cadastrados.
--   **GET /api/patio/{id}**\
-    Retorna um pátio específico pelo ID.
--   **POST /api/patio**\
+    Recupera todos os pátios cadastrados no sistema com paginação.
+-    **POST /api/patio**\
     Cria um novo pátio.
+-   **GET /api/patio/all**\
+    Recupera todos os pátios cadastrados no sistema.
+-   **GET /api/patio/{id}**\
+    Recupera um pátio específico pelo seu ID.
 -   **DELETE /api/patio/{id}**\
     Remove um pátio existente.
 
@@ -61,29 +81,88 @@ Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas
 ### 🔌SensorRFIDController
 
 -   **GET /api/sensorRFID**\
-    Lista todos os sensores RFID cadastrados.
--   **GET /api/sensorRFID/{id}**\
-    Retorna um sensor RFID específico pelo ID.
+    Recupera todos os sensores RFID cadastrados com paginação.
 -   **POST /api/sensorRFID**\
     Cria um novo sensor RFID.
+-   **GET /api/sensorRFID/all**\
+    Recupera todos os sensores RFID cadastrados.
+-   **GET /api/sensorRFID/{id}**\
+    Recupera um sensor RFID específico pelo seu ID.
 -   **PUT /api/sensorRFID/{id}**\
     Atualiza um sensor RFID existente.
 -   **DELETE /api/sensorRFID/{id}**\
-    Remove um sensor RFID.
+    Remove um sensor RFID existente.
 
 ### 🏗️ZonaPatioController
 
 -   **GET /api/zonaPatio**\
-    Lista todas as zonas de pátio cadastradas.
--   **GET /api/zonaPatio/{id}**\
-    Retorna uma zona de pátio específica pelo ID.
+    Recupera todas as zonas do pátio cadastradas com paginação.
 -   **POST /api/zonaPatio**\
     Cria uma nova zona de pátio.
+-   **GET /api/zonaPatio/all**\
+    Recupera todas as zonas de pátio cadastradas.
+-   **GET /api/zonaPatio/{id}**\
+    Recupera uma zona de pátio específica pelo seu ID.
 -   **PUT /api/zonaPatio/{id}**\
     Atualiza uma zona de pátio existente.
 -   **DELETE /api/zonaPatio/{id}**\
-    Remove uma zona de pátio.
+    Remove uma zona de pátio existente.
 
+### 1️⃣ Exemplo de Requisição: Criar Moto (POST /api/Moto)
+
+```json
+{
+  "patioId": 1,
+  "placa": "ABC1234",
+  "modelo": "HondaCG160",
+  "ano": 2023,
+  "rfidTag": "RFID123456"
+}
+```
+### 2️⃣ Exemplo de Requisição: Criar Pátio (POST /api/Patio
+
+```json
+{
+  "nome": "Pátio Central",
+  "endereco": "Av. Brasil, 1234",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "pais": "Brasil",
+  "dimensaoX": 500,
+  "dimensaoY": 300,
+  "plantaBaixa": "planta_central.png"
+}
+
+```
+### 3️⃣ Exemplo de Requisição: Criar Sensor RFID (POST /api/SensorRFID
+
+```json
+{
+  "zonaPatioId": 1,
+  "patioId": 1,
+  "posicao": "Entrada Leste",
+  "posicaoX": 100,
+  "posicaoY": 200,
+  "altura": 5,
+  "anguloVisao": 90
+}
+
+```
+### 4️⃣ Exemplo de Requisição: Zona de Pátio (POST /api/ZonaPatio
+
+```json
+{
+  "patioId": 1,
+  "nome": "Zona A",
+  "tipoZona": 0,
+  "coordenadaInicialX": 0,
+  "coordenadaInicialY": 0,
+  "coordenadaFinalX": 100,
+  "coordenadaFinalY": 50,
+  "cor": "#FF0000"
+}
+
+```
 ⚙️Instalação
 ----------
 
