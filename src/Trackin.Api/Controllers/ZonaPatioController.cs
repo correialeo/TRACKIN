@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
@@ -117,6 +120,8 @@ namespace Trackin.API.Controllers
         {
             ServiceResponse<ZonaPatio> result = await _zonaPatioService.CreateZonaPatioAsync(dto);
 
+            if (result.Message.Contains("não encontrado"))
+                return NotFound(result.Message);
             if (!result.Success)
                 return BadRequest(result.Message);
 
