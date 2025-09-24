@@ -229,6 +229,11 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
         dotnet restore
         ```
 
+    -   Instale o Entity Framework
+        ```
+        dotnet tool install --global dotnet-ef
+        ```
+
 5.  **🗄️Configure a Conexão com o Banco de Dados**
 
     -   Certifique-se de que o container do SQL Server está rodando:
