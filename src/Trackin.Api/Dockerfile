@@ -1,53 +1,33 @@
-# Etapa de Build
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
-# Argumentos para configuração do banco de dados
-ARG DATABASE__SOURCE
-ARG DATABASE__USER
-ARG DATABASE__PASSWORD
-ARG DATABASE__NAME
+WORKDIR /src
 
-# Variáveis de ambiente para o banco de dados
-ENV DATABASE__SOURCE=$DATABASE__SOURCE
-ENV DATABASE__USER=$DATABASE__USER
-ENV DATABASE__PASSWORD=$DATABASE__PASSWORD
-ENV DATABASE__NAME=$DATABASE__NAME
+COPY Trackin.Api/Trackin.Api.csproj ./Trackin.Api/
+COPY Trackin.Application/Trackin.Application.csproj ./Trackin.Application/
+COPY Trackin.Infrastructure/Trackin.Infrastructure.csproj ./Trackin.Infrastructure/
+COPY Trackin.Domain/Trackin.Domain.csproj ./Trackin.Domain/
 
-# Defina o diretório de trabalho
-WORKDIR /App/Trackin.Api
+RUN dotnet restore Trackin.Api/Trackin.Api.csproj
 
-# Copie os arquivos .csproj de todos os projetos para o contêiner (diretórios relativos)
-COPY ../Trackin.Api/Trackin.Api.csproj ./Trackin.Api/
-COPY ../Trackin.Application/Trackin.Application.csproj ./Trackin.Application/
-COPY ../Trackin.Infrastructure/Trackin.Infrastructure.csproj ./Trackin.Infrastructure/
+COPY . .
 
-COPY ../Trackin.Domain/Trackin.Domain.csproj ./Trackin.Domain/
+WORKDIR /src/Trackin.Api
+RUN dotnet publish -c Release -o /app/publish
 
-# Copie o código-fonte completo para o contêiner
-COPY ../ ./ 
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 
-RUN dotnet restore Trackin.Api/Trackin.Api.csproj 
-
-RUN dotnet tool install --global dotnet-ef
-
-RUN dotnet publish Trackin.Api/Trackin.Api.csproj -c Release -o /app/publish
-
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-
-RUN addgroup --system --gid 1001 dotnetuser
-RUN adduser --system --uid 1001 --ingroup dotnetuser dotnetuser
-
-ENV DATABASE__SOURCE=$DATABASE__SOURCE
-ENV DATABASE__USER=$DATABASE__USER
-ENV DATABASE__PASSWORD=$DATABASE__PASSWORD
-ENV DATABASE__NAME=$DATABASE__NAME
+RUN addgroup --system --gid 1001 dotnetuser && \
+    adduser --system --uid 1001 --ingroup dotnetuser dotnetuser
 
 WORKDIR /app
-EXPOSE 8080
-EXPOSE 8081
 
-COPY --from=build /app/publish ./ 
+COPY --from=build /app/publish .
 
+RUN chown -R dotnetuser:dotnetuser /app
 USER dotnetuser
+
+EXPOSE 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Development
 
 ENTRYPOINT ["dotnet", "Trackin.Api.dll"]
