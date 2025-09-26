@@ -138,10 +138,10 @@ az container create \
         "ASPNETCORE_URLS=http://0.0.0.0:8080" \
         "ASPNETCORE_HTTP_PORTS=8080" \
         "DOTNET_RUNNING_IN_CONTAINER=true" \
-        "DATABASE_SOURCE=$DB_SERVER_NAME.database.windows.net" \
-        "DATABASE_USER=$DB_ADMIN" \
-        "DATABASE_PASSWORD=$DB_PASSWORD" \
-        "DATABASE_NAME=$DB_NAME" \
+        "DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net" \
+        "DATABASE__USER=$DB_ADMIN" \
+        "DATABASE__PASSWORD=$DB_PASSWORD" \
+        "DATABASE__NAME=$DB_NAME" \
         "ConnectionStrings_DefaultConnection=Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;" \
     --cpu 1.0 \
     --memory 2.0 \
