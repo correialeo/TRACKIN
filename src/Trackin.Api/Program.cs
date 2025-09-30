@@ -64,6 +64,24 @@ builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
 
 WebApplication app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    try
+    {
+        var db = scope.ServiceProvider.GetRequiredService<TrackinContext>();
+        
+        Console.WriteLine("🔄 Aplicando migrations no banco de dados...");
+        
+        db.Database.Migrate();
+        
+        Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Erro ao aplicar migrations: {ex.Message}");
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

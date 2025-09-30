@@ -1,4 +1,6 @@
 #!/bin/bash
+source ~/.bashrc
+
 # deploy-trackin-fixed.sh - Script completo de deploy da Trackin API (VERSÃO CORRIGIDA)
 
 set -e
@@ -164,17 +166,13 @@ echo ""
 echo "✅ Deploy concluído com sucesso!"
 echo ""
 echo "📊 Informações da aplicação:"
-echo "🌐 URL Principal: http://$FQDN:8080"
-echo "🔢 IP Direto: http://$IP:8080"
+echo "🌐 URL Principal: http://$FQDN:8080/swagger"
 echo "🗄️ Servidor BD: $DB_SERVER_NAME.database.windows.net"
 echo "💾 Database: $DB_NAME"
 echo "👤 Usuário BD: $DB_ADMIN"
 echo ""
 echo "🧪 Testes sugeridos (aguarde 30 segundos):"
-echo "curl -v http://$FQDN:8080"
 echo "curl http://$FQDN:8080/swagger"
-echo "curl http://$FQDN:8080/health"
-echo "curl http://$FQDN:8080/api"
 echo ""
 echo "🔢 Teste com IP direto se FQDN não funcionar:"
 echo "curl -v http://$IP:8080"
