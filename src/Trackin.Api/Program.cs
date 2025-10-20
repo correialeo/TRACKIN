@@ -8,6 +8,7 @@ using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
 using Trackin.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Prometheus;
 
 DotEnv.Load();
 
@@ -91,8 +92,13 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseHttpMetrics();
+
+app.UseRouting();
+
 app.UseAuthorization();
 
+app.MapMetrics();
 app.MapControllers();
 
 app.Run();
