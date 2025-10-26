@@ -106,5 +106,65 @@ namespace Trackin.Domain.ValueObjects
 
             return new Coordenada(x, y);
         }
+
+        public static Coordenada Centro(Coordenada ponto1, Coordenada ponto2)
+        {
+            if (ponto1 == null || ponto2 == null)
+                throw new ArgumentNullException("Pontos não podem ser nulos");
+
+            return new Coordenada(
+                (ponto1.X + ponto2.X) / 2,
+                (ponto1.Y + ponto2.Y) / 2
+            );
+        }
+
+        public bool EstaDentroDoCirculo(Coordenada centro, double raio)
+        {
+            if (centro == null)
+                return false;
+
+            return DistanciaEuclidiana(centro) <= raio;
+        }
+
+        public double AnguloPara(Coordenada destino)
+        {
+            if (destino == null)
+                throw new ArgumentNullException(nameof(destino));
+
+            double deltaX = destino.X - X;
+            double deltaY = destino.Y - Y;
+
+            return Math.Atan2(deltaY, deltaX) * 180 / Math.PI;
+        }
+
+        public Coordenada Rotacionar(Coordenada centro, double anguloGraus)
+        {
+            if (centro == null)
+                throw new ArgumentNullException(nameof(centro));
+
+            double anguloRadianos = anguloGraus * Math.PI / 180;
+            double cos = Math.Cos(anguloRadianos);
+            double sin = Math.Sin(anguloRadianos);
+
+            double deltaX = X - centro.X;
+            double deltaY = Y - centro.Y;
+
+            double novoX = deltaX * cos - deltaY * sin + centro.X;
+            double novoY = deltaX * sin + deltaY * cos + centro.Y;
+
+            return new Coordenada(novoX, novoY);
+        }
+
+        public bool EstaNaLinha(Coordenada ponto1, Coordenada ponto2, double tolerancia = 0.1)
+        {
+            if (ponto1 == null || ponto2 == null)
+                return false;
+
+            double distancia = Math.Abs((ponto2.Y - ponto1.Y) * X - (ponto2.X - ponto1.X) * Y + 
+                                      ponto2.X * ponto1.Y - ponto2.Y * ponto1.X) / 
+                              Math.Sqrt(Math.Pow(ponto2.Y - ponto1.Y, 2) + Math.Pow(ponto2.X - ponto1.X, 2));
+
+            return distancia <= tolerancia;
+        }
     }
 }

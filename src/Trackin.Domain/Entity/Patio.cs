@@ -3,6 +3,10 @@ using Trackin.Domain.ValueObjects;
 
 namespace Trackin.Domain.Entity
 {
+    /// <summary>
+    /// Agregado raiz do domínio Patio.
+    /// Controla todas as operações relacionadas ao pátio e suas entidades filhas.
+    /// </summary>
     public class Patio
     {
         public long Id { get; private set; }
@@ -13,18 +17,22 @@ namespace Trackin.Domain.Entity
         public string Pais { get; private set; } = string.Empty;
         public Coordenada Dimensoes { get; private set; }
         public string PlantaBaixa { get; private set; } = string.Empty;
+        public DateTime DataCriacao { get; private set; }
+        public DateTime? UltimaAtualizacao { get; private set; }
 
         private readonly List<Camera> _cameras = new();
         private readonly List<ZonaPatio> _zonas = new();
         private readonly List<SensorRFID> _sensoresRFID = new();
         private readonly List<Usuario> _usuarios = new();
         private readonly List<LocalizacaoMoto> _localizacoes = new();
+        private readonly List<Moto> _motos = new();
 
         public IReadOnlyCollection<Camera> Cameras => _cameras.AsReadOnly();
         public IReadOnlyCollection<ZonaPatio> Zonas => _zonas.AsReadOnly();
         public IReadOnlyCollection<SensorRFID> SensoresRFID => _sensoresRFID.AsReadOnly();
         public IReadOnlyCollection<Usuario> Usuarios => _usuarios.AsReadOnly();
         public IReadOnlyCollection<LocalizacaoMoto> Localizacoes => _localizacoes.AsReadOnly();
+        public IReadOnlyCollection<Moto> Motos => _motos.AsReadOnly();
 
         protected Patio() { }
 
@@ -38,6 +46,7 @@ namespace Trackin.Domain.Entity
             Estado = estado;
             Pais = pais;
             Dimensoes = new Coordenada(largura, comprimento);
+            DataCriacao = DateTime.UtcNow;
         }
 
         public Camera AdicionarCamera(string posicao, Coordenada posicaoPatio, double altura, double anguloVisao, string url)
@@ -46,6 +55,7 @@ namespace Trackin.Domain.Entity
 
             Camera camera = new Camera(Id, posicao, posicaoPatio, altura, anguloVisao, url);
             _cameras.Add(camera);
+            UltimaAtualizacao = DateTime.UtcNow;
 
             return camera;
         }
@@ -58,6 +68,7 @@ namespace Trackin.Domain.Entity
 
             ZonaPatio zona = new ZonaPatio(Id, nome, tipoZona, pontoInicial, pontoFinal, cor);
             _zonas.Add(zona);
+            UltimaAtualizacao = DateTime.UtcNow;
 
             return zona;
         }
@@ -72,6 +83,7 @@ namespace Trackin.Domain.Entity
 
             SensorRFID sensor = new SensorRFID(zonaId, Id, posicao, posicaoSensor, altura, anguloVisao);
             _sensoresRFID.Add(sensor);
+            UltimaAtualizacao = DateTime.UtcNow;
 
             return sensor;
         }
@@ -85,6 +97,48 @@ namespace Trackin.Domain.Entity
                 throw new InvalidOperationException("Já existe um usuário com este email neste pátio");
 
             _usuarios.Add(usuario);
+            UltimaAtualizacao = DateTime.UtcNow;
+        }
+
+        public Moto AdicionarMoto(string placa, ModeloMoto modelo, int ano, string rfidTag)
+        {
+            if (string.IsNullOrWhiteSpace(placa))
+                throw new ArgumentException("Placa não pode ser vazia", nameof(placa));
+
+            if (string.IsNullOrWhiteSpace(rfidTag))
+                throw new ArgumentException("RFID Tag não pode ser vazia", nameof(rfidTag));
+
+            if (_motos.Any(m => m.Placa == placa))
+                throw new InvalidOperationException("Já existe uma moto com esta placa neste pátio");
+
+            if (_motos.Any(m => m.RFIDTag == rfidTag))
+                throw new InvalidOperationException("Já existe uma moto com este RFID Tag neste pátio");
+
+            Moto moto = new Moto(Id, placa, modelo, ano, rfidTag);
+            _motos.Add(moto);
+            UltimaAtualizacao = DateTime.UtcNow;
+
+            return moto;
+        }
+
+        public void RemoverMoto(long motoId)
+        {
+            Moto? moto = _motos.FirstOrDefault(m => m.Id == motoId);
+            if (moto == null)
+                throw new InvalidOperationException("Moto não encontrada neste pátio");
+
+            _motos.Remove(moto);
+            UltimaAtualizacao = DateTime.UtcNow;
+        }
+
+        public Moto? ObterMoto(long motoId)
+        {
+            return _motos.FirstOrDefault(m => m.Id == motoId);
+        }
+
+        public IEnumerable<Moto> ObterMotosPorStatus(MotoStatus status)
+        {
+            return _motos.Where(m => m.Status == status);
         }
 
         public bool CoordenadaEstaValida(Coordenada coordenada)
