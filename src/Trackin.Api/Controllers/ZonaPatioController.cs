@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
@@ -9,8 +10,9 @@ using Trackin.Domain.Entity;
 
 namespace Trackin.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [ApiVersion(1.0)]
     [Produces("application/json")]
     public class ZonaPatioController : BaseController
     {
