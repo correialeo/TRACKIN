@@ -11,6 +11,9 @@ using Trackin.Infrastructure.Persistence.Repositories.Mongo;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
 using MongoDB.Driver;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text;
 
 DotEnv.Load();
 
@@ -22,6 +25,42 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["SecretKey"] ?? throw new InvalidOperationException("JWT SecretKey não configurada!");
+var key = Encoding.ASCII.GetBytes(secretKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidateAudience = true,
+        ValidAudience = jwtSettings["Audience"],
+        ValidateLifetime = true,
+        ClockSkew = TimeSpan.Zero 
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole("ADMINISTRADOR"));
+
+    options.AddPolicy("AdminOrManager", policy =>
+        policy.RequireRole("ADMINISTRADOR", "GERENTE"));
+
+    options.AddPolicy("CommonOrManager", policy =>
+        policy.RequireRole("COMUM", "GERENTE"));
+});
+
 builder.Services.AddSwaggerGen(x =>
 {
     x.SwaggerDoc("v1", new OpenApiInfo
@@ -31,10 +70,46 @@ builder.Services.AddSwaggerGen(x =>
         Contact = new OpenApiContact() { Name = "Leandro Correia", Email = "rm556203@fiap.com.br" }
     });
 
+    x.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header usando Bearer scheme. Digite 'Bearer' [espaço] e então seu token.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer",
+        BearerFormat = "JWT"
+    });
+
+    x.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[] {}
+        }
+    });
 
     string xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     string xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     x.IncludeXmlComments(xmlPath);
+
+
+});
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
 });
 
 Settings.Initialize(builder.Configuration);
@@ -82,6 +157,10 @@ builder.Services.AddScoped<ISensorRFIDService, SensorRFIDService>();
 builder.Services.AddScoped<IPatioValidacaoService, PatioValidacaoService>();
 builder.Services.AddScoped<IPatioMetricasService, PatioMetricasService>();
 
+//Autenticação e Autorização
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+
 // Repositórios SQL Server (EF Core)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
@@ -91,6 +170,7 @@ builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository
 builder.Services.AddScoped<IPatioRepository, PatioRepository>();
 builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
 builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
+builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
 // Repositórios MongoDB
 builder.Services.AddScoped<IMotoRepository, MotoMongoRepository>();
@@ -129,6 +209,8 @@ app.UseHttpsRedirection();
 app.UseHttpMetrics();
 
 app.UseRouting();
+
+app.UseCors("AllowAll");
 
 app.UseAuthorization();
 
