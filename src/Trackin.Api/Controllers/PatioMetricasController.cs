@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Interfaces;
 
 namespace Trackin.API.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion(1.0)]
+    
     public class PatioMetricasController : ControllerBase
     {
         private readonly IPatioMetricasService _patioMetricasService;

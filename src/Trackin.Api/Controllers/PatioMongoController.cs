@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using Trackin.API.Controllers;
 using Trackin.Application.Common;
@@ -12,7 +13,9 @@ namespace Trackin.Api.Controllers
     /// Controller para operações CRUD de Patio usando MongoDB
     /// </summary>
     [ApiController]
-    [Route("api/v1/mongo/[controller]")]
+    [Route("api/v{version:apiVersion}/mongo/[controller]")]
+    [ApiVersion(1.0)]
+    
     public class PatioMongoController : BaseController
     {
         private readonly IPatioService _patioService;
