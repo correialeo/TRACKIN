@@ -7,8 +7,10 @@ using Trackin.Application.Services;
 using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
 using Trackin.Infrastructure.Persistence.Repositories;
+using Trackin.Infrastructure.Persistence.Repositories.Mongo;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
+using MongoDB.Driver;
 
 DotEnv.Load();
 
@@ -38,11 +40,39 @@ builder.Services.AddSwaggerGen(x =>
 Settings.Initialize(builder.Configuration);
 string connectionString = Settings.GetConnectionString();
 
+// Configuração do SQL Server
 builder.Services.AddDbContext<TrackinContext>(options =>
     {
         options.UseSqlServer(connectionString);
     }
- );
+);
+
+// Configuração do MongoDB
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB");
+var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "TrackinDB";
+
+builder.Services.AddSingleton<IMongoClient>(provider => new MongoClient(mongoConnectionString));
+
+builder.Services.AddScoped<TrackinMongoContext>(provider =>
+{
+    var client = provider.GetRequiredService<IMongoClient>();
+    var mongoUrl = MongoUrl.Create(mongoConnectionString);
+    var database = client.GetDatabase(mongoUrl.DatabaseName);
+    return new TrackinMongoContext(database);
+});
+
+
+// Health Checks
+builder.Services.AddHealthChecks()
+    .AddMongoDb(
+        mongodbConnectionString: mongoConnectionString,
+        name: "mongodb", 
+        tags: new[] { "ready", "mongodb" }
+    )
+    .AddDbContextCheck<TrackinContext>(
+        name: "sqlserver",
+        tags: new[] { "ready", "sqlserver" }
+    );
 
 builder.Services.AddScoped<IMotoService, MotoService>();
 builder.Services.AddScoped<IRFIDService, RFIDService>();
@@ -52,7 +82,7 @@ builder.Services.AddScoped<ISensorRFIDService, SensorRFIDService>();
 builder.Services.AddScoped<IPatioValidacaoService, PatioValidacaoService>();
 builder.Services.AddScoped<IPatioMetricasService, PatioMetricasService>();
 
-
+// Repositórios SQL Server (EF Core)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IMotoRepository, MotoRepository>();
 builder.Services.AddScoped<ISensorRFIDRepository, SensorRFIDRepository>();
@@ -61,6 +91,10 @@ builder.Services.AddScoped<ILocalizacaoMotoRepository, LocalizacaoMotoRepository
 builder.Services.AddScoped<IPatioRepository, PatioRepository>();
 builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
 builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
+
+// Repositórios MongoDB
+builder.Services.AddScoped<IMotoRepository, MotoMongoRepository>();
+builder.Services.AddScoped<IPatioRepository, PatioMongoRepository>();
 
 
 WebApplication app = builder.Build();
@@ -100,5 +134,37 @@ app.UseAuthorization();
 
 app.MapMetrics();
 app.MapControllers();
+
+// Health Check endpoints
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var result = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(entry => new
+            {
+                name = entry.Key,
+                status = entry.Value.Status.ToString(),
+                description = entry.Value.Description,
+                duration = entry.Value.Duration.TotalMilliseconds
+            }),
+            totalDuration = report.TotalDuration.TotalMilliseconds
+        };
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(result));
+    }
+});
+
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
 
 app.Run();

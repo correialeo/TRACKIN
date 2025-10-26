@@ -108,6 +108,53 @@ Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas
 -   **DELETE /api/zonaPatio/{id}**\
     Remove uma zona de pátio existente.
 
+### 🍃MongoDB Controllers (Novos)
+
+#### MotoMongoController
+-   **POST /api/v1/mongo/MotoMongo**\
+    Cria uma nova moto no MongoDB.
+-   **GET /api/v1/mongo/MotoMongo/{id}**\
+    Retorna uma moto pelo seu ID no MongoDB.
+-   **GET /api/v1/mongo/MotoMongo**\
+    Retorna todas as motos do MongoDB.
+-   **GET /api/v1/mongo/MotoMongo/paginated**\
+    Retorna motos com paginação do MongoDB.
+-   **GET /api/v1/mongo/MotoMongo/patio/{patioId}/paginated**\
+    Retorna motos de um pátio específico com paginação.
+-   **GET /api/v1/mongo/MotoMongo/status/{status}/paginated**\
+    Retorna motos por status com paginação.
+-   **PUT /api/v1/mongo/MotoMongo/{id}**\
+    Atualiza uma moto no MongoDB.
+-   **DELETE /api/v1/mongo/MotoMongo/{id}**\
+    Remove uma moto do MongoDB.
+
+#### PatioMongoController
+-   **POST /api/v1/mongo/PatioMongo**\
+    Cria um novo pátio no MongoDB.
+-   **GET /api/v1/mongo/PatioMongo/{id}**\
+    Retorna um pátio pelo seu ID no MongoDB.
+-   **GET /api/v1/mongo/PatioMongo**\
+    Retorna todos os pátios do MongoDB.
+-   **GET /api/v1/mongo/PatioMongo/paginated**\
+    Retorna pátios com paginação do MongoDB.
+-   **POST /api/v1/mongo/PatioMongo/{patioId}/motos**\
+    Adiciona uma moto ao pátio (usando agregado raiz).
+-   **GET /api/v1/mongo/PatioMongo/{patioId}/motos**\
+    Retorna todas as motos de um pátio específico.
+-   **PUT /api/v1/mongo/PatioMongo/{id}**\
+    Atualiza um pátio no MongoDB.
+-   **DELETE /api/v1/mongo/PatioMongo/{id}**\
+    Remove um pátio do MongoDB.
+
+### 🏥Health Check Endpoints
+
+-   **GET /health**\
+    Verifica a saúde geral da aplicação (MongoDB + SQL Server).
+-   **GET /health/ready**\
+    Verifica se a aplicação está pronta para receber tráfego.
+-   **GET /health/live**\
+    Verifica se a aplicação está viva (liveness probe).
+
 ### 1️⃣ Exemplo de Requisição: Criar Moto (POST /api/Moto)
 
 ```json
@@ -163,6 +210,55 @@ Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas
 }
 
 ```
+
+### 5️⃣ Exemplo de Requisição: Criar Moto no MongoDB (POST /api/v1/mongo/MotoMongo)
+
+```json
+{
+  "patioId": 1,
+  "placa": "XYZ9876",
+  "modelo": "YamahaFZ25",
+  "ano": 2024,
+  "rfidTag": "RFID789012"
+}
+```
+
+### 6️⃣ Exemplo de Requisição: Criar Pátio no MongoDB (POST /api/v1/mongo/PatioMongo)
+
+```json
+{
+  "nome": "Pátio MongoDB",
+  "endereco": "Av. MongoDB, 27017",
+  "cidade": "São Paulo",
+  "estado": "SP",
+  "pais": "Brasil",
+  "largura": 400,
+  "comprimento": 300
+}
+```
+
+### 7️⃣ Exemplo de Resposta: Health Check (GET /health)
+
+```json
+{
+  "status": "Healthy",
+  "checks": [
+    {
+      "name": "mongodb",
+      "status": "Healthy",
+      "description": "MongoDB connection is healthy",
+      "duration": 15.2
+    },
+    {
+      "name": "sqlserver",
+      "status": "Healthy", 
+      "description": "SQL Server connection is healthy",
+      "duration": 8.7
+    }
+  ],
+  "totalDuration": 23.9
+}
+```
 ⚙️Instalação
 ----------
 
@@ -171,7 +267,7 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 ### ✅Pré-requisitos
 
 -   **.NET 8 SDK**: [Download](https://dotnet.microsoft.com/download/dotnet/8.0)
--   **Docker**: Para executar o container do SQL Server. [Download](https://www.docker.com/get-started)
+-   **Docker**: Para executar os containers do SQL Server e MongoDB. [Download](https://www.docker.com/get-started)
 -   **Git**: Para clonar o repositório.
 
 ### Passos de Instalação
@@ -190,16 +286,29 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
         git clone git@ssh.dev.azure.com:v3/Challenge2025-Mottu/Mottu/trackin.dotnet.api
         ```
 
-2.  **🗄️Configure o SQL Server via Docker**
+2.  **🗄️Configure os Bancos de Dados via Docker**
 
-    -   Execute o seguinte comando para criar um container do SQL Server:
+    -   **SQL Server**: Execute o seguinte comando para criar um container do SQL Server:
 
         ```bash
         docker run -e "ACCEPT_EULA=Y" -e "MSSQL_SA_PASSWORD=YourStrong@Passw0rd"  -p 1433:1433 --name sqlserver-trackin  -d mcr.microsoft.com/mssql/server:2022-latest
         ```
+
+    -   **MongoDB**: Execute o seguinte comando para criar um container do MongoDB:
+
+        ```bash
+        docker run -d \
+        --name mongodb \
+        -p 27017:27017 \
+        -v mongo-data:/data/db \
+        -e MONGO_INITDB_ROOT_USERNAME=root \
+        -e MONGO_INITDB_ROOT_PASSWORD=trackin \
+        -e MONGO_INITDB_DATABASE=TrackinDB \
+        mongo:8
+        ```
         - ⚠Verifique e modifique de acordo com seu SO.
 
-    -   Aguarde alguns segundos para o container inicializar completamente.
+    -   Aguarde alguns segundos para os containers inicializarem completamente.
 
 3.  **⚠️Configure as Variáveis de Ambiente**
 
@@ -275,6 +384,7 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 
 ### 🐳Comandos Úteis do Docker
 
+#### SQL Server
 -   **Parar o container:**
     ```bash
     docker stop sqlserver-trackin
@@ -293,6 +403,32 @@ Siga os passos abaixo para configurar e executar o projeto localmente:
 -   **Ver logs do container:**
     ```bash
     docker logs sqlserver-trackin
+    ```
+
+#### MongoDB
+-   **Parar o container:**
+    ```bash
+    docker stop mongodb
+    ```
+
+-   **Iniciar o container novamente:**
+    ```bash
+    docker start mongodb
+    ```
+
+-   **Remover o container:**
+    ```bash
+    docker rm mongodb
+    ```
+
+-   **Ver logs do container:**
+    ```bash
+    docker logs mongodb
+    ```
+
+-   **Conectar ao MongoDB:**
+    ```bash
+    docker exec -it mongodb mongosh
     ```
 
 ### 📌Observações
