@@ -28,7 +28,7 @@ namespace Trackin.Domain.Entity
 
             Nome = nome;
             Email = email.ToLowerInvariant();
-            SenhaHash = GerarHashSenha(senha);
+            SenhaHash = senha;
             Role = role;
             PatioId = patioId;
             Ativo = true;
@@ -43,14 +43,6 @@ namespace Trackin.Domain.Entity
             return VerificarHashSenha(senha, SenhaHash);
         }
 
-        public void AlterarSenha(string senhaAtual, string novaSenha)
-        {
-            if (!ValidarSenha(senhaAtual))
-                throw new UnauthorizedAccessException("Senha atual incorreta");
-
-            ValidarForcaSenha(novaSenha);
-            SenhaHash = GerarHashSenha(novaSenha);
-        }
 
         public void RegistrarLogin()
         {
@@ -132,15 +124,6 @@ namespace Trackin.Domain.Entity
             return _eventos.Where(e => e.Timestamp >= dataLimite);
         }
 
-        private string GerarHashSenha(string senha)
-        {
-            using SHA256 sha256 = SHA256.Create();
-            string salt = Guid.NewGuid().ToString();
-            string senhaComSalt = senha + salt;
-            byte[] hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(senhaComSalt));
-            string hash = Convert.ToBase64String(hashBytes);
-            return $"{salt}:{hash}";
-        }
 
         private bool VerificarHashSenha(string senha, string senhaHash)
         {
@@ -168,26 +151,7 @@ namespace Trackin.Domain.Entity
 
             if (!email.Contains("@"))
                 throw new ArgumentException("Email deve ter formato válido", nameof(email));
-
-            ValidarForcaSenha(senha);
         }
 
-        private void ValidarForcaSenha(string senha)
-        {
-            if (string.IsNullOrWhiteSpace(senha))
-                throw new ArgumentException("Senha não pode ser vazia");
-
-            if (senha.Length < 6)
-                throw new ArgumentException("Senha deve ter pelo menos 6 caracteres");
-
-            if (!senha.Any(char.IsUpper))
-                throw new ArgumentException("Senha deve conter ao menos uma letra maiúscula");
-
-            if (!senha.Any(char.IsLower))
-                throw new ArgumentException("Senha deve conter ao menos uma letra minúscula");
-
-            if (!senha.Any(char.IsDigit))
-                throw new ArgumentException("Senha deve conter ao menos um número");
-        }
     }
 }
