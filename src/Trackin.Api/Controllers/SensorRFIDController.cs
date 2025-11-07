@@ -1,5 +1,7 @@
-﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
+
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
@@ -11,6 +13,7 @@ namespace Trackin.API.Controllers
     [ApiController]
     [ApiVersion(1.0)]
     [Produces("application/json")]
+    [Authorize(Roles = "ADMINISTRADOR,GERENTE,COMUM")]
     public class SensorRFIDController : BaseController
     {
         private readonly ISensorRFIDService _sensorRFIDService;

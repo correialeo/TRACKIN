@@ -16,8 +16,8 @@ namespace Trackin.Infrastructure.Mappings
             builder.Property(m => m.Modelo).IsRequired().HasMaxLength(50);
 
             builder.Property(m => m.Modelo).HasConversion(
-                v => v.ToString(), 
-                v => (ModeloMoto)Enum.Parse(typeof(ModeloMoto), v) 
+                v => v.ToString(),
+                v => (ModeloMoto)Enum.Parse(typeof(ModeloMoto), v)
             );
 
             builder.Property(m => m.Ano).IsRequired();
@@ -28,15 +28,11 @@ namespace Trackin.Infrastructure.Mappings
             );
 
             builder.Property(m => m.RFIDTag).IsRequired().HasMaxLength(50);
-            builder.Property(m => m.UltimaManutencao).IsRequired(false); 
+            builder.Property(m => m.UltimaManutencao).IsRequired(false);
             builder.Property(m => m.ImagemReferencia).HasMaxLength(255).IsRequired(false);
             builder.Property(m => m.CaracteristicasVisuais).HasColumnType("NVARCHAR(MAX)").IsRequired(false);
 
-            builder.HasOne(m => m.Patio)
-                .WithMany()
-                .HasForeignKey(m => m.PatioId)
-                .OnDelete(DeleteBehavior.Cascade);
-
+            builder.Property(m => m.PatioId).IsRequired();
 
 
         }

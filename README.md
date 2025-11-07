@@ -27,6 +27,36 @@ A aplicação segue uma **arquitetura em camadas**, garantindo escalabilidade e 
 
 O domínio garante **consistência, rastreabilidade e integridade dos dados**, permitindo expansão futura para monitoramento avançado, relatórios e integrações externas.
 
+## 🧪 Executando os Testes
+
+O projeto inclui testes unitários e de integração usando xUnit. Para executar os testes, siga os passos abaixo:
+
+### Testes Unitários
+```powershell
+dotnet test src/Trackin.Tests/Trackin.Tests.csproj --filter "FullyQualifiedName~Unit"
+```
+
+### Testes de Integração
+```powershell
+dotnet test src/Trackin.Tests/Trackin.Tests.csproj --filter "FullyQualifiedName~Integration"
+```
+
+### Executar Todos os Testes
+```powershell
+dotnet test src/Trackin.Tests/Trackin.Tests.csproj
+```
+
+### Executar Testes com Cobertura
+```powershell
+dotnet test src/Trackin.Tests/Trackin.Tests.csproj /p:CollectCoverage=true /p:CoverletOutputFormat=lcov
+```
+
+Os testes incluem:
+- Testes unitários para serviços principais
+- Testes de integração para endpoints da API
+- Validação de regras de negócio
+- Verificação de respostas HTTP
+
 
 👨‍💻Participantes
 -------------------
@@ -108,25 +138,7 @@ Abaixo estão as rotas implementadas, baseadas nos controllers fornecidos. Todas
 -   **DELETE /api/zonaPatio/{id}**\
     Remove uma zona de pátio existente.
 
-### 🍃MongoDB Controllers (Novos)
 
-#### MotoMongoController
--   **POST /api/v1/mongo/MotoMongo**\
-    Cria uma nova moto no MongoDB.
--   **GET /api/v1/mongo/MotoMongo/{id}**\
-    Retorna uma moto pelo seu ID no MongoDB.
--   **GET /api/v1/mongo/MotoMongo**\
-    Retorna todas as motos do MongoDB.
--   **GET /api/v1/mongo/MotoMongo/paginated**\
-    Retorna motos com paginação do MongoDB.
--   **GET /api/v1/mongo/MotoMongo/patio/{patioId}/paginated**\
-    Retorna motos de um pátio específico com paginação.
--   **GET /api/v1/mongo/MotoMongo/status/{status}/paginated**\
-    Retorna motos por status com paginação.
--   **PUT /api/v1/mongo/MotoMongo/{id}**\
-    Atualiza uma moto no MongoDB.
--   **DELETE /api/v1/mongo/MotoMongo/{id}**\
-    Remove uma moto do MongoDB.
 
 #### PatioMongoController
 -   **POST /api/v1/mongo/PatioMongo**\

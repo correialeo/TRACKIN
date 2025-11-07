@@ -1,4 +1,5 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
@@ -10,6 +11,7 @@ namespace Trackin.API.Controllers
 {
     [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
+    [Authorize]
     [ApiVersion(1.0)]
     public class MotoController : BaseController
     {
@@ -26,8 +28,11 @@ namespace Trackin.API.Controllers
         /// <param name="motoDto">Objeto DTO com os dados da moto a ser criada</param>
         /// <returns>Retorna a moto criada com o status 201 ou erro 400</returns>
         [HttpPost]
+        [Authorize(Roles = "ADMINISTRADOR,GERENTE")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Post([FromBody] MotoDTO motoDto)
         {
             
@@ -49,6 +54,8 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetById(long id)
         {
             ServiceResponse<Moto> response = await _motoService.GetMotoByIdAsync(id);
@@ -62,6 +69,8 @@ namespace Trackin.API.Controllers
         [HttpGet("all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetAll()
         {
             ServiceResponse<IEnumerable<Moto>> response = await _motoService.GetAllMotosAsync();
@@ -77,6 +86,8 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetPaginated([FromQuery] PaginacaoDTO paginacao)
         {
 
@@ -98,6 +109,8 @@ namespace Trackin.API.Controllers
         [HttpGet("patio/{patioId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetByFilial(long patioId, [FromQuery] PaginacaoDTO paginacao)
         {
             ServiceResponsePaginado<Moto> response = await _motoService.GetMotosByPatioPaginatedAsync(
@@ -120,6 +133,8 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetByStatusPaginated(
             MotoStatus status,
             [FromQuery] PaginacaoDTO paginacao)
@@ -141,12 +156,15 @@ namespace Trackin.API.Controllers
         /// <param name="motoDto">Dados atualizados da moto</param>
         /// <returns>Status 204 em caso de sucesso, ou erro apropriado</returns>
         [HttpPut("{id}")]
+        [Authorize(Roles = "ADMINISTRADOR,GERENTE")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Put(long id, [FromBody] EditarMotoDTO motoDto)
         {
-            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id);
+            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id, motoDto);
             if (!result.Success) 
                 return FromService(result);
             
@@ -159,9 +177,12 @@ namespace Trackin.API.Controllers
         /// <param name="id">ID da moto a ser excluída</param>
         /// <returns>Status 204 se deletada com sucesso</returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "ADMINISTRADOR,GERENTE")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Delete(long id)
         {
             ServiceResponse<Moto> result = await _motoService.DeleteMotoAsync(id);
