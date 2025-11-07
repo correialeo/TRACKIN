@@ -162,7 +162,7 @@ namespace Trackin.API.Controllers
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Put(long id, [FromBody] EditarMotoDTO motoDto)
         {
-            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id);
+            ServiceResponse<Moto> result = await _motoService.UpdateMotoAsync(id, motoDto);
             if (!result.Success) 
                 return FromService(result);
             
