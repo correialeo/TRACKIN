@@ -17,8 +17,6 @@ namespace Trackin.Domain.Entity
         public string Pais { get; private set; } = string.Empty;
         public Coordenada Dimensoes { get; private set; }
         public string PlantaBaixa { get; private set; } = string.Empty;
-        public DateTime DataCriacao { get; private set; }
-        public DateTime? UltimaAtualizacao { get; private set; }
 
         private readonly List<Camera> _cameras = new();
         private readonly List<ZonaPatio> _zonas = new();
@@ -46,7 +44,6 @@ namespace Trackin.Domain.Entity
             Estado = estado;
             Pais = pais;
             Dimensoes = new Coordenada(largura, comprimento);
-            DataCriacao = DateTime.UtcNow;
         }
 
         public Camera AdicionarCamera(string posicao, Coordenada posicaoPatio, double altura, double anguloVisao, string url)
@@ -55,7 +52,6 @@ namespace Trackin.Domain.Entity
 
             Camera camera = new Camera(Id, posicao, posicaoPatio, altura, anguloVisao, url);
             _cameras.Add(camera);
-            UltimaAtualizacao = DateTime.UtcNow;
 
             return camera;
         }
@@ -68,7 +64,6 @@ namespace Trackin.Domain.Entity
 
             ZonaPatio zona = new ZonaPatio(Id, nome, tipoZona, pontoInicial, pontoFinal, cor);
             _zonas.Add(zona);
-            UltimaAtualizacao = DateTime.UtcNow;
 
             return zona;
         }
@@ -83,7 +78,6 @@ namespace Trackin.Domain.Entity
 
             SensorRFID sensor = new SensorRFID(zonaId, Id, posicao, posicaoSensor, altura, anguloVisao);
             _sensoresRFID.Add(sensor);
-            UltimaAtualizacao = DateTime.UtcNow;
 
             return sensor;
         }
@@ -97,7 +91,6 @@ namespace Trackin.Domain.Entity
                 throw new InvalidOperationException("Já existe um usuário com este email neste pátio");
 
             _usuarios.Add(usuario);
-            UltimaAtualizacao = DateTime.UtcNow;
         }
 
         public Moto AdicionarMoto(string placa, ModeloMoto modelo, int ano, string rfidTag)
@@ -116,7 +109,6 @@ namespace Trackin.Domain.Entity
 
             Moto moto = new Moto(Id, placa, modelo, ano, rfidTag);
             _motos.Add(moto);
-            UltimaAtualizacao = DateTime.UtcNow;
 
             return moto;
         }
@@ -128,7 +120,6 @@ namespace Trackin.Domain.Entity
                 throw new InvalidOperationException("Moto não encontrada neste pátio");
 
             _motos.Remove(moto);
-            UltimaAtualizacao = DateTime.UtcNow;
         }
 
         public Moto? ObterMoto(long motoId)
