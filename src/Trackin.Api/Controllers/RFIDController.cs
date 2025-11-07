@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
 using Trackin.Application.Interfaces;
@@ -8,6 +9,7 @@ namespace Trackin.API.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Produces("application/json")]
+    [Authorize(Roles = "ADMINISTRADOR,GERENTE,COMUM")]
     public class RFIDController : BaseController
     {
         private readonly IRFIDService _service;
