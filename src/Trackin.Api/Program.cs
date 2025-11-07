@@ -7,10 +7,8 @@ using Trackin.Application.Services;
 using Trackin.Domain.Interfaces;
 using Trackin.Infrastructure.Context;
 using Trackin.Infrastructure.Persistence.Repositories;
-using Trackin.Infrastructure.Persistence.Repositories.Mongo;
 using Microsoft.EntityFrameworkCore;
 using Prometheus;
-using MongoDB.Driver;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Text;
@@ -122,28 +120,8 @@ builder.Services.AddDbContext<TrackinContext>(options =>
     }
 );
 
-// Configuração do MongoDB
-var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB");
-var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "TrackinDB";
-
-builder.Services.AddSingleton<IMongoClient>(provider => new MongoClient(mongoConnectionString));
-
-builder.Services.AddScoped<TrackinMongoContext>(provider =>
-{
-    var client = provider.GetRequiredService<IMongoClient>();
-    var mongoUrl = MongoUrl.Create(mongoConnectionString);
-    var database = client.GetDatabase(mongoUrl.DatabaseName);
-    return new TrackinMongoContext(database);
-});
-
-
 // Health Checks
 builder.Services.AddHealthChecks()
-    .AddMongoDb(
-        mongodbConnectionString: mongoConnectionString,
-        name: "mongodb", 
-        tags: new[] { "ready", "mongodb" }
-    )
     .AddDbContextCheck<TrackinContext>(
         name: "sqlserver",
         tags: new[] { "ready", "sqlserver" }
@@ -172,9 +150,6 @@ builder.Services.AddScoped<IZonaPatioRepository, ZonaPatioRepository>();
 builder.Services.AddScoped<IMotoImagemService, MotoImagemService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 
-// Repositórios MongoDB
-builder.Services.AddScoped<IMotoRepository, MotoMongoRepository>();
-builder.Services.AddScoped<IPatioRepository, PatioMongoRepository>();
 
 
 WebApplication app = builder.Build();
@@ -185,11 +160,12 @@ using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<TrackinContext>();
         
-        Console.WriteLine("🔄 Aplicando migrations no banco de dados...");
-        
-        db.Database.Migrate();
-        
-        Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+        if (db.Database.ProviderName?.Contains("InMemory") == false)
+        {
+            Console.WriteLine("🔄 Aplicando migrations no banco de dados...");
+            db.Database.Migrate();
+            Console.WriteLine("✅ Migrations aplicadas com sucesso!");
+        }
     }
     catch (Exception ex)
     {
@@ -250,3 +226,5 @@ app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthC
 });
 
 app.Run();
+
+public partial class Program { }
