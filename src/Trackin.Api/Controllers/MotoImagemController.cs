@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Interfaces;
 using Trackin.Domain.Entity;
 using Trackin.Application.Common;
@@ -7,8 +8,9 @@ namespace Trackin.API.Controllers
 {
     
     
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [ApiVersion(1.0)]
     [Produces("application/json")]
     public class MotoImagemController : ControllerBase
     {

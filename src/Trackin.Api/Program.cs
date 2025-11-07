@@ -21,6 +21,9 @@ WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+builder.Services.AddApiVersioning();
+
 builder.Services.AddEndpointsApiExplorer();
 
 var jwtSettings = builder.Configuration.GetSection("Jwt");
@@ -177,7 +180,11 @@ using (var scope = app.Services.CreateScope())
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(ui =>
+    {
+        ui.SwaggerEndpoint("/swagger/v1/swagger.json", "TRACKIN API v1");
+        ui.SwaggerEndpoint("/swagger/v2/swagger.json", "TRACKIN API v2");
+    });
 }
 
 app.UseHttpsRedirection();

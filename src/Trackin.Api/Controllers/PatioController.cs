@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
@@ -7,8 +8,9 @@ using Trackin.Domain.Entity;
 
 namespace Trackin.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [ApiController]
+    [ApiVersion(1.0)]
     [Produces("application/json")]
     [Authorize(Roles = "ADMINISTRADOR,GERENTE,COMUM")]
     public class PatioController : BaseController

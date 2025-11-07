@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Trackin.Application.Common;
 using Trackin.Application.DTOs;
@@ -8,9 +9,10 @@ using Trackin.Domain.Enums;
 
 namespace Trackin.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     [Produces("application/json")]
     [Authorize]
+    [ApiVersion(1.0)]
     public class MotoController : BaseController
     {
         private readonly IMotoService _motoService;
