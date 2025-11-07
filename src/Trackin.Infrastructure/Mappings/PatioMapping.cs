@@ -22,6 +22,10 @@ namespace Trackin.Infrastructure.Mappings
                    .WithOne(z => z.Patio)
                    .HasForeignKey(z => z.PatioId);
 
+            builder.HasMany(p => p.Motos)
+                   .WithOne(m => m.Patio)
+                   .HasForeignKey(m => m.PatioId);
+
             builder.OwnsOne(c => c.Dimensoes, coordenada =>
             {
                 coordenada.Property(p => p.X)
