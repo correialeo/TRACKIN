@@ -180,13 +180,19 @@ namespace Trackin.Application.Services
             }
         }
 
-        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id)
+        public async Task<ServiceResponse<Moto>> UpdateMotoAsync(long id, EditarMotoDTO motoDto)
         {
             try
             {
                var moto = await ObterMoto(id);
                if (moto == null)
                    return Erro<Moto>("moto não encontrada");
+
+               var patio = await ObterPatio(motoDto.PatioId);
+               if (patio == null)
+                   return Erro<Moto>(PatioNaoExiste);
+
+               moto.AlterarDados(motoDto.PatioId, motoDto.Placa, motoDto.Modelo, motoDto.Ano, motoDto.RFIDTag);
 
                 await _motoRepository.UpdateMotoAsync(moto);
                 await _motoRepository.SaveChangesAsync();

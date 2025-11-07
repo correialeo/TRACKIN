@@ -27,7 +27,7 @@ namespace Trackin.Application.Interfaces
             int pageSize,
             string? ordering = null,
             bool descendingOrder = false);
-        Task<ServiceResponse<Moto>> UpdateMotoAsync(long id);
+        Task<ServiceResponse<Moto>> UpdateMotoAsync(long id, EditarMotoDTO motoDto);
         Task<ServiceResponse<Moto>> DeleteMotoAsync(long id);
     }
 }
