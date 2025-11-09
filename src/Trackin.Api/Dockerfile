@@ -2,14 +2,14 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
 
-COPY Trackin.Api/Trackin.Api.csproj ./Trackin.Api/
-COPY Trackin.Application/Trackin.Application.csproj ./Trackin.Application/
-COPY Trackin.Infrastructure/Trackin.Infrastructure.csproj ./Trackin.Infrastructure/
-COPY Trackin.Domain/Trackin.Domain.csproj ./Trackin.Domain/
+COPY ["src/Trackin.Api/Trackin.Api.csproj", "Trackin.Api/"]
+COPY ["src/Trackin.Application/Trackin.Application.csproj", "Trackin.Application/"]
+COPY ["src/Trackin.Infrastructure/Trackin.Infrastructure.csproj", "Infrastructure/"]
+COPY ["src/Trackin.Domain/Trackin.Domain.csproj", "Domain/"]
 
-RUN dotnet restore Trackin.Api/Trackin.Api.csproj
+RUN dotnet restore "Trackin.Api/Trackin.Api.csproj"
 
-COPY . .
+COPY src/ .
 
 WORKDIR /src/Trackin.Api
 RUN dotnet publish -c Release -o /app/publish
