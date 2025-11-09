@@ -70,7 +70,8 @@ stages:
         containerRegistry: 'a40a5539-324b-4890-9497-063eb275b912'
         repository: 'correialeo/trackin.dotnet.api'
         command: 'build'
-        Dockerfile: 'src/Trackin.Api/Dockerfile'
+        Dockerfile: 'Dockerfile'
+        buildContext: 'src'
         tags: |
           latest
           $(Build.BuildId)
