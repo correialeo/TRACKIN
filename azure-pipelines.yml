@@ -93,7 +93,7 @@ stages:
       displayName: 'Copy deployment script'
       inputs:
         SourceFolder: '$(Build.SourcesDirectory)'
-        Contents: 'deploy-trackin.sh'
+        Contents: 'deploy-trackin-pipeline.sh'
         TargetFolder: '$(Build.ArtifactStagingDirectory)'
     
     # ⭐ PUBLICAR ARTEFATO (OBRIGATÓRIO - evita -5 pontos)
