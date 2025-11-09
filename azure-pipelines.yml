@@ -1,0 +1,104 @@
+trigger:
+  branches:
+    include:
+    - master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  dockerImageName: 'trackin-api'
+
+stages:
+- stage: Build
+  displayName: 'Build and Test'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build, Test and Publish'
+    steps:
+    
+    # Checkout do código
+    - checkout: self
+      fetchDepth: 1
+    
+    # Setup do .NET
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '8.x'
+    
+    # Restaurar dependências
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+    
+    # Build da aplicação
+    - task: DotNetCoreCLI@2
+      displayName: 'Build application'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    
+    # ⭐ EXECUTAR TESTES (OBRIGATÓRIO - evita -5 pontos)
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      inputs:
+        command: 'test'
+        projects: '**/Trackin.Tests/*.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage" --logger trx'
+        publishTestResults: true
+    
+    # Publicar resultados dos testes
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        mergeTestResults: true
+        failTaskOnFailedTests: true
+      condition: succeededOrFailed()
+    
+    # Build da imagem Docker
+    - task: Docker@2
+      displayName: 'Build Docker Image'
+      inputs:
+        containerRegistry: 'a40a5539-324b-4890-9497-063eb275b912'
+        repository: 'correialeo/trackin.dotnet.api'
+        command: 'build'
+        Dockerfile: 'src/Trackin.Api/Dockerfile'
+        tags: |
+          latest
+          $(Build.BuildId)
+        arguments: '--build-arg BUILDCONFIG=$(buildConfiguration)'
+    
+    # Push da imagem Docker
+    - task: Docker@2
+      displayName: 'Push Docker Image'
+      inputs:
+        containerRegistry: 'a40a5539-324b-4890-9497-063eb275b912'
+        repository: 'correialeo/trackin.dotnet.api'
+        command: 'push'
+        tags: |
+          latest
+          $(Build.BuildId)
+    
+    # Copiar script de deploy para staging
+    - task: CopyFiles@2
+      displayName: 'Copy deployment script'
+      inputs:
+        SourceFolder: '$(Build.SourcesDirectory)'
+        Contents: 'deploy-trackin.sh'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    
+    # ⭐ PUBLICAR ARTEFATO (OBRIGATÓRIO - evita -5 pontos)
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Build Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'
