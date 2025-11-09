@@ -1,4 +1,4 @@
-📌Trackin.API - Sprint 4 / CP 04 .NET
+📌Trackin.API - Sprint 4 / CP 04 .NET 8
 ======================
 
 📖Descrição do Projeto
