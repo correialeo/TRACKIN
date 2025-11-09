@@ -176,18 +176,15 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(ui =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(ui =>
-    {
-        ui.SwaggerEndpoint("/swagger/v1/swagger.json", "TRACKIN API v1");
-        ui.SwaggerEndpoint("/swagger/v2/swagger.json", "TRACKIN API v2");
-    });
-}
+    ui.SwaggerEndpoint("/swagger/v1/swagger.json", "TRACKIN API v1");
+    ui.RoutePrefix = "swagger";
+});
 
-app.UseHttpsRedirection();
+// ⚠️ REMOVER UseHttpsRedirection se não tiver HTTPS no container
+// app.UseHttpsRedirection();
 
 app.UseHttpMetrics();
 
@@ -195,10 +192,20 @@ app.UseRouting();
 
 app.UseCors("AllowAll");
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapMetrics();
 app.MapControllers();
+
+app.MapGet("/", () => Results.Ok(new 
+{
+    message = "✅ Trackin API está funcionando!",
+    environment = app.Environment.EnvironmentName,
+    timestamp = DateTime.UtcNow,
+    version = "1.0.0",
+    swagger = "/swagger"
+})).AllowAnonymous();
 
 // Health Check endpoints
 app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

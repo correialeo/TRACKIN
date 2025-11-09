@@ -177,15 +177,13 @@ az container create \
     --protocol TCP \
     --ip-address Public \
     --environment-variables \
-        "ASPNETCORE_ENVIRONMENT=Production" \
-        "ASPNETCORE_URLS=http://0.0.0.0:8080" \
+        "ASPNETCORE_URLS=http://+:8080" \
         "ASPNETCORE_HTTP_PORTS=8080" \
         "DOTNET_RUNNING_IN_CONTAINER=true" \
         "DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net" \
         "DATABASE__USER=$DB_ADMIN" \
         "DATABASE__PASSWORD=$DB_PASSWORD" \
         "DATABASE__NAME=$DB_NAME" \
-        "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
     --cpu 1.0 \
     --memory 2.0 \
     --os-type Linux \
