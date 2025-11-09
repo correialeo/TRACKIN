@@ -1,23 +1,19 @@
 #!/bin/bash
 
-# deploy-trackin-pipeline.sh - Deploy usando Docker Hub
+# deploy-trackin-pipeline.sh - Deploy usando ACR (Azure Container Registry)
 
 set -e
 
-echo "🚀 Iniciando deploy da Trackin API no Azure (Docker Hub)..."
+echo "🚀 Iniciando deploy da Trackin API no Azure (ACR)..."
 
 # ==================== CONFIGURAÇÕES ====================
 RESOURCE_GROUP="${RESOURCE_GROUP:-rg-trackin-sprint}"
 LOCATION="West US"
 ACI_NAME="aci-trackin-api"
 
-# Imagem do Docker Hub (gerada pela pipeline CI)
-DOCKER_IMAGE="${DOCKER_IMAGE:-correialeo/trackin.dotnet.api:latest}"
-
-# Credenciais do Docker Hub - FORÇAR PÚBLICO se não especificado
-FORCE_PUBLIC="${FORCE_PUBLIC:-true}"
-DOCKER_USERNAME="${DOCKER_USERNAME:-}"
-DOCKER_PASSWORD="${DOCKER_PASSWORD:-}"
+# ACR Configuration
+ACR_NAME="${ACR_NAME:-acrtrackin$(date +%s | tail -c 6)}"
+DOCKER_HUB_IMAGE="${DOCKER_IMAGE:-correialeo/trackin.dotnet.api:latest}"
 
 # Configurações do banco
 if [ -z "$DB_SERVER" ]; then
@@ -31,16 +27,17 @@ DB_PASSWORD="${DB_PASSWORD:-Trackin@123!}"
 
 echo "📋 Configurações:"
 echo "Resource Group: $RESOURCE_GROUP"
-echo "Docker Image: $DOCKER_IMAGE"
+echo "ACR Name: $ACR_NAME"
+echo "Docker Hub Image: $DOCKER_HUB_IMAGE"
 echo "DB Server: $DB_SERVER_NAME"
 echo "DB Name: $DB_NAME"
-echo "Force Public Image: $FORCE_PUBLIC"
 
 # ==================== REGISTRAR PROVIDERS ====================
 echo ""
 echo "📂 Registrando providers necessários..."
 az provider register --namespace Microsoft.ContainerInstance --wait
 az provider register --namespace Microsoft.Sql --wait
+az provider register --namespace Microsoft.ContainerRegistry --wait
 
 echo "✅ Providers registrados!"
 
@@ -53,6 +50,73 @@ if ! az group show --name $RESOURCE_GROUP >/dev/null 2>&1; then
 else
     echo "Resource Group já existe."
 fi
+
+# ==================== CRIAR/VERIFICAR ACR ====================
+echo ""
+echo "🐳 Configurando Azure Container Registry..."
+if ! az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
+    echo "Criando ACR: $ACR_NAME..."
+    az acr create \
+        --resource-group $RESOURCE_GROUP \
+        --name $ACR_NAME \
+        --sku Basic \
+        --admin-enabled true \
+        --location "$LOCATION"
+    
+    echo "✅ ACR criado com sucesso!"
+else
+    echo "ACR já existe: $ACR_NAME"
+    # Garantir que admin está habilitado
+    az acr update --name $ACR_NAME --admin-enabled true
+fi
+
+# Obter credenciais do ACR
+echo ""
+echo "🔐 Obtendo credenciais do ACR..."
+ACR_USERNAME=$(az acr credential show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query username --output tsv)
+ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query "passwords[0].value" --output tsv)
+ACR_LOGIN_SERVER=$(az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP --query loginServer --output tsv)
+
+echo "✅ Credenciais obtidas: $ACR_LOGIN_SERVER"
+
+# ==================== IMPORTAR IMAGEM DO DOCKER HUB PARA ACR ====================
+echo ""
+echo "📥 Importando imagem do Docker Hub para ACR..."
+echo "Origem: $DOCKER_HUB_IMAGE"
+echo "Destino: $ACR_LOGIN_SERVER/trackin-api:latest"
+
+az acr import \
+    --name $ACR_NAME \
+    --source docker.io/$DOCKER_HUB_IMAGE \
+    --image trackin-api:latest \
+    --resource-group $RESOURCE_GROUP \
+    --force || {
+        echo "⚠️  Falha na importação. Tentando método alternativo..."
+        
+        # Método alternativo: pull + push usando docker
+        echo "Login no ACR..."
+        echo "$ACR_PASSWORD" | docker login $ACR_LOGIN_SERVER -u $ACR_USERNAME --password-stdin
+        
+        echo "Pull da imagem do Docker Hub..."
+        docker pull $DOCKER_HUB_IMAGE
+        
+        echo "Tag da imagem para ACR..."
+        docker tag $DOCKER_HUB_IMAGE $ACR_LOGIN_SERVER/trackin-api:latest
+        
+        echo "Push para ACR..."
+        docker push $ACR_LOGIN_SERVER/trackin-api:latest
+    }
+
+echo "✅ Imagem disponível no ACR!"
+
+# Verificar se imagem existe no ACR
+echo ""
+echo "🔍 Verificando imagem no ACR..."
+az acr repository show --name $ACR_NAME --image trackin-api:latest
+
+# Imagem final no ACR
+FINAL_IMAGE="$ACR_LOGIN_SERVER/trackin-api:latest"
+echo "✅ Imagem final: $FINAL_IMAGE"
 
 # ==================== CRIAR SQL SERVER E DATABASE ====================
 CREATE_DB=false
@@ -85,20 +149,6 @@ else
     echo "SQL Server já existe: $DB_SERVER_NAME"
 fi
 
-# ==================== CONFIGURAR IMAGEM DO DOCKER HUB ====================
-echo ""
-echo "🐳 Configurando deploy com Docker Hub..."
-echo "Imagem: $DOCKER_IMAGE"
-
-# Decidir se usa autenticação (APENAS se não forçar público E tiver credenciais)
-if [ "$FORCE_PUBLIC" = "false" ] && [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
-    echo "🔐 Credenciais do Docker Hub detectadas (imagem privada)"
-    USE_DOCKER_AUTH=true
-else
-    echo "ℹ️  Usando imagem pública do Docker Hub (sem autenticação)"
-    USE_DOCKER_AUTH=false
-fi
-
 # ==================== DEPLOY CONTAINER INSTANCE ====================
 echo ""
 echo "🔍 Verificando se container já existe..."
@@ -109,64 +159,37 @@ if az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME >/dev/nul
 fi
 
 echo ""
-echo "📱 Criando Container Instance no Azure..."
+echo "📱 Criando Container Instance no Azure (usando ACR)..."
 
 # String de conexão
 CONNECTION_STRING="Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;"
 
-# Criar container COM ou SEM autenticação
-if [ "$USE_DOCKER_AUTH" = true ]; then
-    echo "🔐 Criando container com autenticação Docker Hub..."
-    az container create \
-        --resource-group $RESOURCE_GROUP \
-        --name $ACI_NAME \
-        --image $DOCKER_IMAGE \
-        --registry-login-server docker.io \
-        --registry-username "$DOCKER_USERNAME" \
-        --registry-password "$DOCKER_PASSWORD" \
-        --dns-name-label "trackin-api-$(date +%s)" \
-        --ports 8080 80 443 \
-        --protocol TCP \
-        --ip-address Public \
-        --environment-variables \
-            "ASPNETCORE_ENVIRONMENT=Production" \
-            "ASPNETCORE_URLS=http://0.0.0.0:8080" \
-            "ASPNETCORE_HTTP_PORTS=8080" \
-            "DOTNET_RUNNING_IN_CONTAINER=true" \
-            "DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net" \
-            "DATABASE__USER=$DB_ADMIN" \
-            "DATABASE__PASSWORD=$DB_PASSWORD" \
-            "DATABASE__NAME=$DB_NAME" \
-            "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
-        --cpu 1.0 \
-        --memory 2.0 \
-        --os-type Linux \
-        --restart-policy Always
-else
-    echo "🌐 Criando container com imagem pública (SEM autenticação)..."
-    az container create \
-        --resource-group $RESOURCE_GROUP \
-        --name $ACI_NAME \
-        --image $DOCKER_IMAGE \
-        --dns-name-label "trackin-api-$(date +%s)" \
-        --ports 8080 80 443 \
-        --protocol TCP \
-        --ip-address Public \
-        --environment-variables \
-            "ASPNETCORE_ENVIRONMENT=Production" \
-            "ASPNETCORE_URLS=http://0.0.0.0:8080" \
-            "ASPNETCORE_HTTP_PORTS=8080" \
-            "DOTNET_RUNNING_IN_CONTAINER=true" \
-            "DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net" \
-            "DATABASE__USER=$DB_ADMIN" \
-            "DATABASE__PASSWORD=$DB_PASSWORD" \
-            "DATABASE__NAME=$DB_NAME" \
-            "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
-        --cpu 1.0 \
-        --memory 2.0 \
-        --os-type Linux \
-        --restart-policy Always
-fi
+# Criar container usando ACR
+az container create \
+    --resource-group $RESOURCE_GROUP \
+    --name $ACI_NAME \
+    --image $FINAL_IMAGE \
+    --registry-login-server $ACR_LOGIN_SERVER \
+    --registry-username $ACR_USERNAME \
+    --registry-password "$ACR_PASSWORD" \
+    --dns-name-label "trackin-api-$(date +%s)" \
+    --ports 8080 80 443 \
+    --protocol TCP \
+    --ip-address Public \
+    --environment-variables \
+        "ASPNETCORE_ENVIRONMENT=Production" \
+        "ASPNETCORE_URLS=http://0.0.0.0:8080" \
+        "ASPNETCORE_HTTP_PORTS=8080" \
+        "DOTNET_RUNNING_IN_CONTAINER=true" \
+        "DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net" \
+        "DATABASE__USER=$DB_ADMIN" \
+        "DATABASE__PASSWORD=$DB_PASSWORD" \
+        "DATABASE__NAME=$DB_NAME" \
+        "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
+    --cpu 1.0 \
+    --memory 2.0 \
+    --os-type Linux \
+    --restart-policy Always
 
 echo ""
 echo "⏳ Aguardando container inicializar..."
@@ -190,6 +213,8 @@ echo "📊 Informações da aplicação:"
 echo "🌐 URL Swagger: http://$FQDN:8080/swagger"
 echo "🌐 URL API: http://$FQDN:8080"
 echo "🔢 IP Público: $IP"
+echo "🐳 ACR: $ACR_LOGIN_SERVER"
+echo "📦 Imagem: $FINAL_IMAGE"
 echo "🗄️ SQL Server: $DB_SERVER_NAME.database.windows.net"
 echo "💾 Database: $DB_NAME"
 echo "👤 Usuário: $DB_ADMIN"
@@ -210,6 +235,9 @@ echo "az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --quer
 echo ""
 echo "# Reiniciar container:"
 echo "az container restart --resource-group $RESOURCE_GROUP --name $ACI_NAME"
+echo ""
+echo "# Ver imagens no ACR:"
+echo "az acr repository list --name $ACR_NAME --output table"
 echo ""
 
 # ==================== TESTE DE CONECTIVIDADE ====================
@@ -233,6 +261,8 @@ if [ -n "$SYSTEM_TEAMFOUNDATIONCOLLECTIONURI" ]; then
     echo "##vso[task.setvariable variable=APP_FQDN]$FQDN"
     echo "##vso[task.setvariable variable=APP_IP]$IP"
     echo "##vso[task.setvariable variable=DB_SERVER_FULL]$DB_SERVER_NAME.database.windows.net"
+    echo "##vso[task.setvariable variable=ACR_NAME]$ACR_NAME"
+    echo "##vso[task.setvariable variable=ACR_LOGIN_SERVER]$ACR_LOGIN_SERVER"
 fi
 
 echo ""
