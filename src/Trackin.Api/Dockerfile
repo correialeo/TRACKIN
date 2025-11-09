@@ -2,15 +2,17 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 
 WORKDIR /src
 
-COPY ["src/Trackin.Api/Trackin.Api.csproj", "./Trackin.Api/"]
-COPY ["src/Trackin.Application/Trackin.Application.csproj", "./Trackin.Application/"]
-COPY ["src/Trackin.Infrastructure/Trackin.Infrastructure.csproj", "./Trackin.Infrastructure/"]
-COPY ["src/Trackin.Domain/Trackin.Domain.csproj", "./Trackin.Domain/"]
+# Copiar os arquivos .csproj mantendo a estrutura correta
+COPY ["src/Trackin.Api/Trackin.Api.csproj", "Trackin.Api/"]
+COPY ["src/Trackin.Application/Trackin.Application.csproj", "Trackin.Application/"]
+COPY ["src/Trackin.Infrastructure/Trackin.Infrastructure.csproj", "Trackin.Infrastructure/"]
+COPY ["src/Trackin.Domain/Trackin.Domain.csproj", "Trackin.Domain/"]
 
-RUN dotnet restore "./Trackin.Api/Trackin.Api.csproj"
+# Restaurar dependências
+RUN dotnet restore "Trackin.Api/Trackin.Api.csproj"
 
-# Copiar todo o código fonte
-COPY src/ .
+# Copiar todo o código fonte mantendo a estrutura
+COPY ["src/", "./"]
 
 WORKDIR /src/Trackin.Api
 RUN dotnet publish -c Release -o /app/publish
