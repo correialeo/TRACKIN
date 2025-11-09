@@ -14,7 +14,8 @@ ACI_NAME="aci-trackin-api"
 # Imagem do Docker Hub (gerada pela pipeline CI)
 DOCKER_IMAGE="${DOCKER_IMAGE:-correialeo/trackin.dotnet.api:latest}"
 
-# Credenciais do Docker Hub (opcionais - só se imagem for privada)
+# Credenciais do Docker Hub - FORÇAR PÚBLICO se não especificado
+FORCE_PUBLIC="${FORCE_PUBLIC:-true}"
 DOCKER_USERNAME="${DOCKER_USERNAME:-}"
 DOCKER_PASSWORD="${DOCKER_PASSWORD:-}"
 
@@ -33,7 +34,7 @@ echo "Resource Group: $RESOURCE_GROUP"
 echo "Docker Image: $DOCKER_IMAGE"
 echo "DB Server: $DB_SERVER_NAME"
 echo "DB Name: $DB_NAME"
-echo "Using pipeline credentials: $([ -n "$DB_USER" ] && echo 'Yes' || echo 'No')"
+echo "Force Public Image: $FORCE_PUBLIC"
 
 # ==================== REGISTRAR PROVIDERS ====================
 echo ""
@@ -89,12 +90,12 @@ echo ""
 echo "🐳 Configurando deploy com Docker Hub..."
 echo "Imagem: $DOCKER_IMAGE"
 
-# Verificar se há credenciais do Docker Hub
-if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
+# Decidir se usa autenticação (APENAS se não forçar público E tiver credenciais)
+if [ "$FORCE_PUBLIC" = "false" ] && [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
     echo "🔐 Credenciais do Docker Hub detectadas (imagem privada)"
     USE_DOCKER_AUTH=true
 else
-    echo "ℹ️  Usando imagem pública do Docker Hub"
+    echo "ℹ️  Usando imagem pública do Docker Hub (sem autenticação)"
     USE_DOCKER_AUTH=false
 fi
 
@@ -113,7 +114,7 @@ echo "📱 Criando Container Instance no Azure..."
 # String de conexão
 CONNECTION_STRING="Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;"
 
-# Criar container com ou sem autenticação Docker Hub
+# Criar container COM ou SEM autenticação
 if [ "$USE_DOCKER_AUTH" = true ]; then
     echo "🔐 Criando container com autenticação Docker Hub..."
     az container create \
@@ -142,7 +143,7 @@ if [ "$USE_DOCKER_AUTH" = true ]; then
         --os-type Linux \
         --restart-policy Always
 else
-    echo "🌐 Criando container com imagem pública..."
+    echo "🌐 Criando container com imagem pública (SEM autenticação)..."
     az container create \
         --resource-group $RESOURCE_GROUP \
         --name $ACI_NAME \
