@@ -11,7 +11,7 @@ public class PatioControllerTests : IntegrationTestBase
     public async Task GetPatios_ReturnsSuccessStatusCode()
     {
         // Act
-        var response = await _client.GetAsync("/api/patio");
+        var response = await _client.GetAsync("/api/v1/patio");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -38,7 +38,7 @@ public class PatioControllerTests : IntegrationTestBase
             "application/json");
 
         // Act
-        var response = await _client.PostAsync("/api/patio", content);
+        var response = await _client.PostAsync("/api/v1/patio", content);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);

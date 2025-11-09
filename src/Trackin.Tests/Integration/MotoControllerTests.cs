@@ -12,7 +12,7 @@ public class MotoControllerTests : IntegrationTestBase
     public async Task GetMotos_ReturnsSuccessStatusCode()
     {
         // Act
-        var response = await _client.GetAsync("/api/moto");
+        var response = await _client.GetAsync("/api/v1/moto");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -25,7 +25,7 @@ public class MotoControllerTests : IntegrationTestBase
         var idInexistente = 99999;
 
         // Act
-        var response = await _client.GetAsync($"/api/moto/{idInexistente}");
+        var response = await _client.GetAsync($"/api/v1/moto/{idInexistente}");
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
@@ -38,7 +38,7 @@ public class MotoControllerTests : IntegrationTestBase
         var patioId = 1;
 
         // Act
-        var response = await _client.GetAsync($"/api/moto/patio/{patioId}");
+        var response = await _client.GetAsync($"/api/v1/moto/patio/{patioId}");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -64,7 +64,7 @@ public class MotoControllerTests : IntegrationTestBase
             Encoding.UTF8,
             "application/json");
 
-        var responsePatio = await _client.PostAsync("/api/patio", contentPatio);
+        var responsePatio = await _client.PostAsync("/api/v1/patio", contentPatio);
         var patio = await JsonSerializer.DeserializeAsync<dynamic>(
             await responsePatio.Content.ReadAsStreamAsync());
         var patioId = (long)patio.GetProperty("id").GetInt64();
@@ -84,7 +84,7 @@ public class MotoControllerTests : IntegrationTestBase
             Encoding.UTF8,
             "application/json");
 
-        var responseMoto = await _client.PostAsync("/api/moto", contentMoto);
+        var responseMoto = await _client.PostAsync("/api/v1/moto", contentMoto);
         var moto = await JsonSerializer.DeserializeAsync<dynamic>(
             await responseMoto.Content.ReadAsStreamAsync());
         var motoId = (long)moto.GetProperty("id").GetInt64();
@@ -105,7 +105,7 @@ public class MotoControllerTests : IntegrationTestBase
             "application/json");
 
         // Act
-        var response = await _client.PutAsync($"/api/moto/{motoId}", contentEditar);
+        var response = await _client.PutAsync($"/api/v1/moto/{motoId}", contentEditar);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
