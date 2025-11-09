@@ -1,13 +1,12 @@
 #!/bin/bash
-source ~/.bashrc
 
-# deploy-trackin-pipeline.sh - Deploy integrado com Azure DevOps Pipeline
+# deploy-trackin-pipeline.sh - Deploy usando Docker Hub
 
 set -e
 
-echo "🚀 Iniciando deploy da Trackin API no Azure (Versão Pipeline)..."
+echo "🚀 Iniciando deploy da Trackin API no Azure (Docker Hub)..."
 
-# ==================== CONFIGURAÇÕES (usa variáveis da pipeline se disponíveis) ====================
+# ==================== CONFIGURAÇÕES ====================
 RESOURCE_GROUP="${RESOURCE_GROUP:-rg-trackin-sprint}"
 LOCATION="West US"
 ACI_NAME="aci-trackin-api"
@@ -19,7 +18,7 @@ DOCKER_IMAGE="${DOCKER_IMAGE:-correialeo/trackin.dotnet.api:latest}"
 DOCKER_USERNAME="${DOCKER_USERNAME:-}"
 DOCKER_PASSWORD="${DOCKER_PASSWORD:-}"
 
-# Configurações do banco (vindas da pipeline como variáveis secretas)
+# Configurações do banco
 if [ -z "$DB_SERVER" ]; then
     DB_SERVER_NAME="sqlserver-trackin-$(date +%s)"
 else
@@ -31,28 +30,21 @@ DB_PASSWORD="${DB_PASSWORD:-Trackin@123!}"
 
 echo "📋 Configurações:"
 echo "Resource Group: $RESOURCE_GROUP"
-echo "ACR Name: $ACR_NAME"
+echo "Docker Image: $DOCKER_IMAGE"
 echo "DB Server: $DB_SERVER_NAME"
-echo "Using credentials from pipeline: $([ -n "$DB_USER" ] && echo 'Yes' || echo 'No')"
+echo "DB Name: $DB_NAME"
+echo "Using pipeline credentials: $([ -n "$DB_USER" ] && echo 'Yes' || echo 'No')"
 
 # ==================== REGISTRAR PROVIDERS ====================
+echo ""
 echo "📂 Registrando providers necessários..."
-az provider register --namespace Microsoft.ContainerRegistry
-az provider register --namespace Microsoft.ContainerInstance
-az provider register --namespace Microsoft.Sql
+az provider register --namespace Microsoft.ContainerInstance --wait
+az provider register --namespace Microsoft.Sql --wait
 
-echo "⏳ Aguardando providers ficarem disponíveis..."
-for provider in "Microsoft.ContainerRegistry" "Microsoft.ContainerInstance" "Microsoft.Sql"; do
-    echo "Verificando $provider..."
-    while [ "$(az provider show --namespace $provider --query "registrationState" -o tsv)" != "Registered" ]; do
-        echo "Aguardando $provider ficar disponível..."
-        sleep 10
-    done
-done
+echo "✅ Providers registrados!"
 
-echo "✅ Todos os providers estão registrados e disponíveis!"
-
-# ==================== VERIFICAR OU CRIAR RECURSOS ====================
+# ==================== CRIAR RESOURCE GROUP ====================
+echo ""
 echo "📦 Verificando Resource Group..."
 if ! az group show --name $RESOURCE_GROUP >/dev/null 2>&1; then
     echo "Criando Resource Group..."
@@ -61,23 +53,12 @@ else
     echo "Resource Group já existe."
 fi
 
-echo "🐳 Verificando Azure Container Registry..."
-if az acr show --name $ACR_NAME --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
-    echo "ACR $ACR_NAME já existe, usando o existente..."
-else
-    echo "Criando novo ACR: $ACR_NAME"
-    az acr create \
-        --resource-group $RESOURCE_GROUP \
-        --name $ACR_NAME \
-        --sku Basic \
-        --admin-enabled true
-fi
-
-# Verificar se precisa criar SQL Server
+# ==================== CRIAR SQL SERVER E DATABASE ====================
 CREATE_DB=false
 if [[ "$DB_SERVER_NAME" == *"$(date +%s)"* ]] || ! az sql server show --name $DB_SERVER_NAME --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
     CREATE_DB=true
-    echo "🗄️ Criando SQL Server..."
+    echo ""
+    echo "🗄️ Criando SQL Server: $DB_SERVER_NAME..."
     az sql server create \
         --name $DB_SERVER_NAME \
         --resource-group $RESOURCE_GROUP \
@@ -85,7 +66,7 @@ if [[ "$DB_SERVER_NAME" == *"$(date +%s)"* ]] || ! az sql server show --name $DB
         --admin-user $DB_ADMIN \
         --admin-password $DB_PASSWORD
 
-    echo "💾 Criando Database..."
+    echo "💾 Criando Database: $DB_NAME..."
     az sql db create \
         --resource-group $RESOURCE_GROUP \
         --server $DB_SERVER_NAME \
@@ -104,55 +85,37 @@ else
 fi
 
 # ==================== CONFIGURAR IMAGEM DO DOCKER HUB ====================
-# A imagem já foi buildada e enviada para o Docker Hub pela pipeline CI
-DOCKER_IMAGE="${DOCKER_IMAGE:-correialeo/trackin.dotnet.api:latest}"
-echo "🐳 Usando imagem do Docker Hub: $DOCKER_IMAGE"
+echo ""
+echo "🐳 Configurando deploy com Docker Hub..."
+echo "Imagem: $DOCKER_IMAGE"
 
-# Se houver credenciais do Docker Hub configuradas, usar
+# Verificar se há credenciais do Docker Hub
 if [ -n "$DOCKER_USERNAME" ] && [ -n "$DOCKER_PASSWORD" ]; then
-    echo "🔐 Credenciais do Docker Hub detectadas"
-    USE_DOCKER_HUB=true
+    echo "🔐 Credenciais do Docker Hub detectadas (imagem privada)"
+    USE_DOCKER_AUTH=true
 else
-    echo "ℹ️  Usando imagem pública do Docker Hub (sem autenticação)"
-    USE_DOCKER_HUB=false
+    echo "ℹ️  Usando imagem pública do Docker Hub"
+    USE_DOCKER_AUTH=false
 fi
 
-# Verificar se container já existe e deletar se necessário
+# ==================== DEPLOY CONTAINER INSTANCE ====================
+echo ""
+echo "🔍 Verificando se container já existe..."
 if az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME >/dev/null 2>&1; then
     echo "⚠️  Container já existe. Deletando para recriar..."
     az container delete --resource-group $RESOURCE_GROUP --name $ACI_NAME --yes
     sleep 15
 fi
 
-echo "📱 Criando Container Instance..."
+echo ""
+echo "📱 Criando Container Instance no Azure..."
 
-# Montar comando base
-ACI_CREATE_CMD="az container create \
-    --resource-group $RESOURCE_GROUP \
-    --name $ACI_NAME \
-    --image $DOCKER_IMAGE \
-    --dns-name-label trackin-api-sprint-$(date +%s) \
-    --ports 8080 80 443 \
-    --protocol TCP \
-    --ip-address Public \
-    --environment-variables \
-        \"ASPNETCORE_ENVIRONMENT=Production\" \
-        \"ASPNETCORE_URLS=http://0.0.0.0:8080\" \
-        \"ASPNETCORE_HTTP_PORTS=8080\" \
-        \"DOTNET_RUNNING_IN_CONTAINER=true\" \
-        \"DATABASE__SOURCE=$DB_SERVER_NAME.database.windows.net\" \
-        \"DATABASE__USER=$DB_ADMIN\" \
-        \"DATABASE__PASSWORD=$DB_PASSWORD\" \
-        \"DATABASE__NAME=$DB_NAME\" \
-        \"ConnectionStrings__DefaultConnection=Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;\" \
-    --cpu 1.0 \
-    --memory 2.0 \
-    --os-type Linux \
-    --restart-policy Always"
+# String de conexão
+CONNECTION_STRING="Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;"
 
-# Se houver credenciais do Docker Hub, adicionar autenticação
-if [ "$USE_DOCKER_HUB" = true ]; then
-    echo "🔐 Configurando autenticação com Docker Hub..."
+# Criar container com ou sem autenticação Docker Hub
+if [ "$USE_DOCKER_AUTH" = true ]; then
+    echo "🔐 Criando container com autenticação Docker Hub..."
     az container create \
         --resource-group $RESOURCE_GROUP \
         --name $ACI_NAME \
@@ -160,7 +123,7 @@ if [ "$USE_DOCKER_HUB" = true ]; then
         --registry-login-server docker.io \
         --registry-username "$DOCKER_USERNAME" \
         --registry-password "$DOCKER_PASSWORD" \
-        --dns-name-label trackin-api-sprint-$(date +%s) \
+        --dns-name-label "trackin-api-$(date +%s)" \
         --ports 8080 80 443 \
         --protocol TCP \
         --ip-address Public \
@@ -173,18 +136,18 @@ if [ "$USE_DOCKER_HUB" = true ]; then
             "DATABASE__USER=$DB_ADMIN" \
             "DATABASE__PASSWORD=$DB_PASSWORD" \
             "DATABASE__NAME=$DB_NAME" \
-            "ConnectionStrings__DefaultConnection=Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;" \
+            "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
         --cpu 1.0 \
         --memory 2.0 \
         --os-type Linux \
         --restart-policy Always
 else
-    echo "🌐 Usando imagem pública do Docker Hub..."
+    echo "🌐 Criando container com imagem pública..."
     az container create \
         --resource-group $RESOURCE_GROUP \
         --name $ACI_NAME \
         --image $DOCKER_IMAGE \
-        --dns-name-label trackin-api-sprint-$(date +%s) \
+        --dns-name-label "trackin-api-$(date +%s)" \
         --ports 8080 80 443 \
         --protocol TCP \
         --ip-address Public \
@@ -197,51 +160,58 @@ else
             "DATABASE__USER=$DB_ADMIN" \
             "DATABASE__PASSWORD=$DB_PASSWORD" \
             "DATABASE__NAME=$DB_NAME" \
-            "ConnectionStrings__DefaultConnection=Server=$DB_SERVER_NAME.database.windows.net;Database=$DB_NAME;User Id=$DB_ADMIN;Password=$DB_PASSWORD;TrustServerCertificate=true;Encrypt=true;" \
+            "ConnectionStrings__DefaultConnection=$CONNECTION_STRING" \
         --cpu 1.0 \
         --memory 2.0 \
         --os-type Linux \
         --restart-policy Always
 fi
 
+echo ""
 echo "⏳ Aguardando container inicializar..."
-sleep 45
+sleep 30
 
 # ==================== VERIFICAÇÃO E RESULTADOS ====================
+echo ""
 echo "🔍 Verificando estado do container..."
 CONTAINER_STATE=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query "containers[0].instanceView.currentState.state" --output tsv)
-echo "Estado do container: $CONTAINER_STATE"
+echo "Estado: $CONTAINER_STATE"
 
 FQDN=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query "ipAddress.fqdn" --output tsv)
 IP=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query "ipAddress.ip" --output tsv)
 
 echo ""
+echo "✅ =============================================="
 echo "✅ Deploy concluído com sucesso!"
+echo "✅ =============================================="
 echo ""
 echo "📊 Informações da aplicação:"
 echo "🌐 URL Swagger: http://$FQDN:8080/swagger"
 echo "🌐 URL API: http://$FQDN:8080"
-echo "🔢 IP: $IP"
-echo "🗄️ Servidor BD: $DB_SERVER_NAME.database.windows.net"
+echo "🔢 IP Público: $IP"
+echo "🗄️ SQL Server: $DB_SERVER_NAME.database.windows.net"
 echo "💾 Database: $DB_NAME"
-echo "👤 Usuário BD: $DB_ADMIN"
+echo "👤 Usuário: $DB_ADMIN"
 echo ""
-echo "🧪 Testes sugeridos:"
+echo "🧪 Comandos de teste:"
+echo "# Testar API via FQDN:"
 echo "curl http://$FQDN:8080/swagger"
+echo ""
+echo "# Testar API via IP:"
 echo "curl http://$IP:8080"
 echo ""
 echo "📋 Comandos úteis:"
-echo "# Ver logs:"
+echo "# Ver logs em tempo real:"
 echo "az container logs --resource-group $RESOURCE_GROUP --name $ACI_NAME --follow"
 echo ""
-echo "# Reiniciar:"
+echo "# Ver estado atual:"
+echo "az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query 'containers[0].instanceView.currentState'"
+echo ""
+echo "# Reiniciar container:"
 echo "az container restart --resource-group $RESOURCE_GROUP --name $ACI_NAME"
 echo ""
-echo "# Status:"
-echo "az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME --query 'containers[0].instanceView.currentState'"
 
-# ==================== TESTE AUTOMÁTICO ====================
-echo ""
+# ==================== TESTE DE CONECTIVIDADE ====================
 echo "🧪 Testando conectividade..."
 sleep 20
 
@@ -249,11 +219,20 @@ if curl -s --connect-timeout 10 http://$FQDN:8080 >/dev/null 2>&1; then
     echo "✅ API respondendo corretamente!"
     echo "🎉 Deploy concluído e aplicação acessível!"
 else
-    echo "⚠️  Container pode estar inicializando..."
-    echo "💡 Verifique os logs: az container logs --resource-group $RESOURCE_GROUP --name $ACI_NAME"
+    echo "⚠️  API ainda está inicializando..."
+    echo "💡 Aguarde mais alguns instantes e teste manualmente"
+    echo ""
+    echo "Para verificar logs:"
+    echo "az container logs --resource-group $RESOURCE_GROUP --name $ACI_NAME"
 fi
 
-# Salvar informações para a pipeline
-echo "##vso[task.setvariable variable=APP_URL]http://$FQDN:8080"
-echo "##vso[task.setvariable variable=APP_FQDN]$FQDN"
-echo "##vso[task.setvariable variable=APP_IP]$IP"
+# Salvar variáveis para a pipeline (se estiver rodando no Azure DevOps)
+if [ -n "$SYSTEM_TEAMFOUNDATIONCOLLECTIONURI" ]; then
+    echo "##vso[task.setvariable variable=APP_URL]http://$FQDN:8080"
+    echo "##vso[task.setvariable variable=APP_FQDN]$FQDN"
+    echo "##vso[task.setvariable variable=APP_IP]$IP"
+    echo "##vso[task.setvariable variable=DB_SERVER_FULL]$DB_SERVER_NAME.database.windows.net"
+fi
+
+echo ""
+echo "🎊 Script finalizado!"
